@@ -1,0 +1,25 @@
+# Xcode
+.DS_Store
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Xcode user-specific project data
+*.xcworkspace/xcuserdata/
+
+# macOS
+.Trashes
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and temporary files
+*.log
+*.tmp
