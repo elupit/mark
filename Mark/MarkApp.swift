@@ -25,6 +25,8 @@ import SwiftUI
 struct MarkApp: App {
     @Environment(\.openWindow) private var openWindow
     @FocusedBinding(\.document) private var document
+    @FocusedValue(\.speakerAction)
+    private var speakerAction
     
     var body: some Scene {
         DocumentGroup(newDocument: Document()) { file in
@@ -51,6 +53,11 @@ struct MarkApp: App {
                     document?.meta.isLocked.toggle()
                 }
                 .disabled(document == nil)
+                Divider()
+                Button("Speakers") {
+                    speakerAction?()
+                }
+                .disabled(speakerAction == nil)
             }
         }
     }

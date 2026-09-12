@@ -1,8 +1,8 @@
 //
-//  ParsedDocument.swift
+//  SpeakerKey.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 09.09.2026.
+//  Created by Mikhail Korzh on 12.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,23 +19,15 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-import Foundation
+import SwiftUI
 
-/// The structural representation produced by the parser.
-struct ParsedDocument: Sendable, Equatable {
-    let segments: [Segment]
+struct SpeakerKey: FocusedValueKey {
+    typealias Value = () -> Void
 }
 
-extension ParsedDocument {
-    var speakers: [String] {
-        var result: [String] = []
-
-        for segment in segments {
-            if !result.contains(segment.speaker) {
-                result.append(segment.speaker)
-            }
-        }
-        
-        return result
+extension FocusedValues {
+    var speakerAction: (() -> Void)? {
+        get { self[SpeakerKey.self] }
+        set { self[SpeakerKey.self] = newValue }
     }
 }

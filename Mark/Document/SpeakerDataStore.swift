@@ -1,8 +1,8 @@
 //
-//  ParsedDocument.swift
+//  SpeakerDataStore.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 09.09.2026.
+//  Created by Mikhail Korzh on 12.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -21,21 +21,22 @@
 
 import Foundation
 
-/// The structural representation produced by the parser.
-struct ParsedDocument: Sendable, Equatable {
-    let segments: [Segment]
-}
+nonisolated struct SpeakerDataStore: Codable, Sendable, Equatable {
+    var speakers: [String: SpeakerData] = [:]
 
-extension ParsedDocument {
-    var speakers: [String] {
-        var result: [String] = []
+    init(speakers: [String: SpeakerData] = [:]) {
+        self.speakers = speakers
+    }
 
-        for segment in segments {
-            if !result.contains(segment.speaker) {
-                result.append(segment.speaker)
-            }
-        }
-        
-        return result
+    func data(for speaker: String) -> SpeakerData? {
+        speakers[speaker]
+    }
+
+    mutating func set(_ data: SpeakerData, for speaker: String) {
+        speakers[speaker] = data
+    }
+
+    mutating func removeData(for speaker: String) {
+        speakers.removeValue(forKey: speaker)
     }
 }

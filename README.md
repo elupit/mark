@@ -2,7 +2,7 @@
 
 Mark was developed to address personal needs and simplify the process of working with interview transcripts. Its primary objective is to create an accessible and transparent tool that can make social researchers’ work a bit easier. The app is designed to be private by default. It is completely free and will remain free.
 
-Mark is a personal project by a researcher learning to build the tools they would like to use themselves, rather than a professional software developer. A great deal of the inspiration for Mark comes from Lauri-Matti Parppei and the care that he shows when creating [Beat](https://github.com/lmparppei/Beat).
+Mark is a personal project by a researcher learning to build the tools they would like to use themselves. Much of the inspiration for this app comes from Lauri-Matti Parppei and the care put into [Beat](https://github.com/lmparppei/Beat).
 
 Created with love and hope for a better future.
 

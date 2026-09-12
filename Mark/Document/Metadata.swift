@@ -24,12 +24,29 @@ import Foundation
 nonisolated struct Metadata: Codable, Sendable {
     var caretPosition: Int?
     var isLocked: Bool
+    var speakerData: SpeakerDataStore
 
     init(
         caretPosition: Int? = nil,
-        isLocked: Bool = false
+        isLocked: Bool = false,
+        speakerData: SpeakerDataStore = SpeakerDataStore()
     ) {
         self.caretPosition = caretPosition
         self.isLocked = isLocked
+        self.speakerData = speakerData
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case caretPosition
+        case isLocked
+        case speakerData
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        caretPosition = try container.decodeIfPresent(Int.self, forKey: .caretPosition)
+        isLocked = try container.decodeIfPresent(Bool.self, forKey: .isLocked) ?? false
+        speakerData = try container.decodeIfPresent(SpeakerDataStore.self, forKey: .speakerData) ?? SpeakerDataStore()
     }
 }

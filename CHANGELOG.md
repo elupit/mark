@@ -6,7 +6,7 @@
 ## Mark 0.2.0
 
 - Lock and unlock document function
-- 
+- Speaker model implementation (in progress)
 
 ## Mark 0.1.0
 
