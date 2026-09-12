@@ -27,19 +27,12 @@ struct EditorView: View {
 
     /// Creates the editor and connects it to the document text and parser.
     var body: some View {
-        TextEditorView(text: $document.text,
-                       caretPosition: Binding(
-                           get: {
-                               document.meta?.caretPosition
-                           },
-                           set: { position in
-                               if document.meta == nil {
-                                   document.meta = Metadata()
-                               }
-
-                               document.meta?.caretPosition = position
-                           }
-                       ))
+        VStack {
+            TextEditorView(text: $document.text,
+                           caretPosition: $document.meta.caretPosition,
+                           isLocked: $document.meta.isLocked)
+            .focusedSceneValue(\.document, $document)
+        }
     }
 }
 

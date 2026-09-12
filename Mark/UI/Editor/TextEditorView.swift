@@ -26,6 +26,7 @@ struct TextEditorView: NSViewRepresentable {
 
     @Binding var text: String
     @Binding var caretPosition: Int?
+    @Binding var isLocked: Bool
 
     let parser = Parser()
     let presentation = Presentation()
@@ -35,6 +36,7 @@ struct TextEditorView: NSViewRepresentable {
         Coordinator(
             text: $text,
             caretPosition: $caretPosition,
+            isLocked: $isLocked,
             parser: parser,
             presentation: presentation
         )
@@ -53,7 +55,7 @@ struct TextEditorView: NSViewRepresentable {
         let textView = NSTextView()
         let savedCaretPosition = caretPosition
 
-        textView.isEditable = true
+        textView.isEditable = !isLocked
         textView.isSelectable = true
         textView.isRichText = false
         textView.allowsUndo = true
@@ -95,7 +97,7 @@ struct TextEditorView: NSViewRepresentable {
                     return
                 }
                 
-                textView.window?.makeFirstResponder(textView)
+                window.makeFirstResponder(textView)
                 
                 textView.setSelectedRange(
                     NSRange(location: position, length: 0)
@@ -111,14 +113,19 @@ struct TextEditorView: NSViewRepresentable {
         return scrollView
     }
 
-    /// Keeps the native text view independent while the user is editing.
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let textView = scrollView.documentView as? NSTextView else {
+            return
+        }
+        
+        textView.isEditable = !isLocked
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
 
         @Binding var text: String
         @Binding var caretPosition: Int?
+        @Binding var isLocked: Bool
 
         let parser: Parser
         let presentation: Presentation
@@ -128,11 +135,13 @@ struct TextEditorView: NSViewRepresentable {
         init(
             text: Binding<String>,
             caretPosition: Binding<Int?>,
+            isLocked: Binding<Bool>,
             parser: Parser,
             presentation: Presentation
         ) {
             self._text = text
             self._caretPosition = caretPosition
+            self._isLocked = isLocked
             self.parser = parser
             self.presentation = presentation
         }

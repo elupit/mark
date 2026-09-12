@@ -24,6 +24,7 @@ import SwiftUI
 @main
 struct MarkApp: App {
     @Environment(\.openWindow) private var openWindow
+    @FocusedBinding(\.document) private var document
     
     var body: some Scene {
         DocumentGroup(newDocument: Document()) { file in
@@ -44,6 +45,12 @@ struct MarkApp: App {
                 Button("About Mark") {
                     openWindow(id: "about")
                 }
+            }
+            CommandGroup(before: .printItem) {
+                Button(document?.meta.isLocked == false ? "Lock Document" : "Unlock Document") {
+                    document?.meta.isLocked.toggle()
+                }
+                .disabled(document == nil)
             }
         }
     }

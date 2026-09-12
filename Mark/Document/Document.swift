@@ -24,9 +24,9 @@ import UniformTypeIdentifiers
 
 nonisolated struct Document: FileDocument {
     var text: String
-    var meta: Metadata?
+    var meta: Metadata
 
-    init(text: String = "", meta: Metadata? = Metadata()) {
+    init(text: String = "", meta: Metadata = Metadata()) {
         self.text = text
         self.meta = meta
     }

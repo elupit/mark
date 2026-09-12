@@ -3,6 +3,11 @@
 > [!NOTE]
 > Mark is still in pre-release development. For now, version numbers describe the development stage of the project rather than public releases.
 
+## Mark 0.2.0
+
+- Lock and unlock document function
+- 
+
 ## Mark 0.1.0
 
 - Save documents using the `.mark` format

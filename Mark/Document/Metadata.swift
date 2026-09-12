@@ -23,8 +23,13 @@ import Foundation
 
 nonisolated struct Metadata: Codable, Sendable {
     var caretPosition: Int?
+    var isLocked: Bool
 
-    init(caretPosition: Int? = nil) {
+    init(
+        caretPosition: Int? = nil,
+        isLocked: Bool = false
+    ) {
         self.caretPosition = caretPosition
+        self.isLocked = isLocked
     }
 }

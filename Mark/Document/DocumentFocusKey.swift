@@ -1,8 +1,8 @@
 //
-//  SerializedDocument.swift
+//  DocumentFocusKey.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 10.09.2026.
+//  Created by Mikhail Korzh on 12.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,9 +19,16 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-import Foundation
 
-struct SerializedDocument: Sendable {
-    let text: String
-    let meta: Metadata
+import SwiftUI
+
+private struct DocumentFocusKey: FocusedValueKey {
+    typealias Value = Binding<Document>
+}
+
+extension FocusedValues {
+    var document: Binding<Document>? {
+        get { self[DocumentFocusKey.self] }
+        set { self[DocumentFocusKey.self] = newValue }
+    }
 }
