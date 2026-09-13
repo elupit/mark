@@ -7,7 +7,7 @@
 
 - Lock and unlock document
 - Speaker model implementation
-- Speaker roles and notes
+- Speaker role, color and notes
 
 ## Mark 0.1.0
 

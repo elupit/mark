@@ -23,7 +23,6 @@ import SwiftUI
 
 struct SpeakerView: View {
     let speakers: [String]
-    
     @Binding var speakerData: SpeakerDataStore
     
     let onSpeakerDataChange: (String) -> Void
@@ -65,22 +64,25 @@ struct SpeakerView: View {
                                             )?.role
                                         },
                                         set: { role in
-                                            let notes = speakerData
-                                                .data(for: speaker)?
-                                                .notes
+                                            let currentData = speakerData.data(for: speaker)
+
+                                            let notes = currentData?.notes
+                                            let color = currentData?.color
 
                                             if let role {
                                                 speakerData.set(
                                                     SpeakerData(
                                                         role: role,
+                                                        color: color,
                                                         notes: notes
                                                     ),
                                                     for: speaker
                                                 )
-                                            } else if let notes {
+                                            } else if notes != nil || color != nil {
                                                 speakerData.set(
                                                     SpeakerData(
                                                         role: nil,
+                                                        color: color,
                                                         notes: notes
                                                     ),
                                                     for: speaker
@@ -121,7 +123,10 @@ struct SpeakerView: View {
                                 ) {
                                     SpeakerDetailsView(
                                         speaker: speaker,
-                                        speakerData: $speakerData
+                                        speakerData: $speakerData,
+                                        onSpeakerDataChange: {
+                                            onSpeakerDataChange(speaker)
+                                        }
                                     )
                                 }
                             }

@@ -24,13 +24,37 @@ import SwiftUI
 struct SpeakerDetailsView: View {
 
     let speaker: String
-
     @Binding var speakerData: SpeakerDataStore
 
     @State private var notes = ""
+    @State private var color: SpeakerColor?
+    
+    let onSpeakerDataChange: () -> Void
 
     var body: some View {
         Form {
+            Section("Color") {
+                ColorPicker(selection: $color)
+                .onChange(of: color) {
+                    let current = speakerData.data(for: speaker)
+
+                    if current?.role != nil || current?.notes != nil || color != nil {
+                        speakerData.set(
+                            SpeakerData(
+                                role: current?.role,
+                                color: color,
+                                notes: current?.notes
+                            ),
+                            for: speaker
+                        )
+                    } else {
+                        speakerData.removeData(for: speaker)
+                    }
+
+                    onSpeakerDataChange()
+                }
+            }
+
             Section("Notes") {
                 TextEditor(text: $notes)
                     .scrollContentBackground(.hidden)
@@ -39,22 +63,31 @@ struct SpeakerDetailsView: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .frame(width: 320, height: 180)
+        .frame(width: 320, height: 270)
         .onAppear {
-            notes = speakerData.data(for: speaker)?.notes ?? ""
+            let current = speakerData.data(for: speaker)
+            notes = current?.notes ?? ""
+            color = current?.color
         }
         .onChange(of: notes) {
-            let role = speakerData.data(for: speaker)?.role
+            let current = speakerData.data(for: speaker)
 
             if notes.isEmpty {
-                if let role {
-                    speakerData.set(SpeakerData(role: role), for: speaker)
+                if current?.role != nil || color != nil {
+                    speakerData.set(
+                        SpeakerData(role: current?.role, color: color),
+                        for: speaker
+                    )
                 } else {
                     speakerData.removeData(for: speaker)
                 }
             } else {
                 speakerData.set(
-                    SpeakerData(role: role, notes: notes),
+                    SpeakerData(
+                        role: current?.role,
+                        color: color,
+                        notes: notes
+                    ),
                     for: speaker
                 )
             }
@@ -70,10 +103,12 @@ struct SpeakerDetailsView: View {
                 speakers: [
                     "ANNA": SpeakerData(
                         role: .informant,
+                        color: .blue,
                         notes: "Mother of the child. Interviewed twice."
                     )
                 ]
             )
-        )
+        ),
+        onSpeakerDataChange: {}
     )
 }

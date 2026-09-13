@@ -23,10 +23,16 @@ import Foundation
 
 nonisolated struct SpeakerData: Codable, Sendable, Equatable {
     var role: SpeakerRole?
+    var color: SpeakerColor?
     var notes: String?
 
-    init(role: SpeakerRole? = nil, notes: String? = nil) {
+    init(
+        role: SpeakerRole? = nil,
+        color: SpeakerColor? = nil,
+        notes: String? = nil
+    ) {
         self.role = role
+        self.color = color
         self.notes = notes
     }
 }
