@@ -48,12 +48,15 @@ struct MarkApp: App {
                     openWindow(id: "about")
                 }
             }
+            
             CommandGroup(before: .printItem) {
                 Button(document?.meta.isLocked == false ? "Lock Document" : "Unlock Document") {
                     document?.meta.isLocked.toggle()
                 }
                 .disabled(document == nil)
-                Divider()
+            }
+            
+            CommandMenu("Transcript") {
                 Button("Speakers") {
                     speakerAction?()
                 }

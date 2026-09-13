@@ -22,29 +22,43 @@
 import SwiftUI
 
 struct EditorView: View {
+
     @Binding var document: Document
+
     @State private var isSpeakerSheetPresented = false
-    
+    @State private var editorController = EditorController()
+
     private var parsedDocument: ParsedDocument {
         Parser().parse(document.text)
     }
 
-    /// Creates the editor and connects it to the document text and parser.
     var body: some View {
         VStack {
-            TextEditorView(text: $document.text,
-                           caretPosition: $document.meta.caretPosition,
-                           isLocked: $document.meta.isLocked
+            TextEditorView(
+                text: $document.text,
+                caretPosition: $document.meta.caretPosition,
+                isLocked: $document.meta.isLocked,
+                speakerData: $document.meta.speakerData,
+                editorController: editorController
             )
             .focusedSceneValue(\.document, $document)
-            .focusedSceneValue(\.speakerAction,
-                                { isSpeakerSheetPresented = true }
+            .focusedSceneValue(
+                \.speakerAction,
+                {
+                    isSpeakerSheetPresented = true
+                }
             )
         }
         .sheet(isPresented: $isSpeakerSheetPresented) {
             SpeakerView(
                 speakers: parsedDocument.speakers,
-                speakerData: $document.meta.speakerData
+                speakerData: $document.meta.speakerData,
+                onSpeakerDataChange: { speaker in
+                    editorController.rerenderSpeaker(
+                        speaker,
+                        speakerData: document.meta.speakerData
+                    )
+                }
             )
         }
     }

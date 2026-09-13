@@ -1,5 +1,5 @@
 //
-//  SpeakerData.swift
+//  EditorController.swift
 //  Mark
 //
 //  Created by Mikhail Korzh on 12.09.2026.
@@ -19,14 +19,30 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-import Foundation
+import AppKit
 
-nonisolated struct SpeakerData: Codable, Sendable, Equatable {
-    var role: SpeakerRole?
-    var notes: String?
+final class EditorController {
 
-    init(role: SpeakerRole? = nil, notes: String? = nil) {
-        self.role = role
-        self.notes = notes
+    weak var textView: NSTextView?
+
+    private let parser = Parser()
+    private let presentation = Presentation()
+
+    func rerenderSpeaker(
+        _ speaker: String,
+        speakerData: SpeakerDataStore
+    ) {
+        guard let textView else {
+            return
+        }
+
+        let parsedDocument = parser.parse(textView.string)
+
+        presentation.rerenderSpeaker(
+            speaker,
+            in: parsedDocument,
+            to: textView,
+            speakerData: speakerData
+        )
     }
 }

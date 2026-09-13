@@ -29,7 +29,8 @@ struct Presentation {
     func apply(
         _ parsedDocument: ParsedDocument,
         to textView: NSTextView,
-        paragraphRange: NSRange
+        paragraphRange: NSRange,
+        speakerData: SpeakerDataStore
     ) {
         guard let textStorage = textView.textStorage else {
             return
@@ -77,29 +78,112 @@ struct Presentation {
         )
 
         for segment in parsedDocument.segments {
-            let speakerRange = NSRange(
-                location: segment.speakerRange.location,
-                length: segment.speakerRange.length
+
+            let segmentRange = NSRange(
+                location: segment.range.location,
+                length: segment.range.length
             )
 
             guard NSIntersectionRange(
-                speakerRange,
+                segmentRange,
                 safeParagraphRange
             ).length > 0 else {
                 continue
             }
 
-            guard speakerRange.location >= 0,
-                  speakerRange.location + speakerRange.length <= length
+            guard segmentRange.location >= 0,
+                  segmentRange.location + segmentRange.length <= length
+            else {
+                continue
+            }
+
+            let speakerRange = NSRange(
+                location: segment.speakerRange.location,
+                length: segment.speakerRange.length
+            )
+
+            // Every speaker marker is bold.
+            textStorage.addAttribute(
+                .font,
+                value: boldFont,
+                range: speakerRange
+            )
+
+            // The entire interviewer's segment is bold.
+            if speakerData.data(for: segment.speaker)?.role == .interviewer {
+                textStorage.addAttribute(
+                    .font,
+                    value: boldFont,
+                    range: segmentRange
+                )
+            }
+        }
+
+        textStorage.endEditing()
+    }
+    
+    func rerenderSpeaker(
+        _ speaker: String,
+        in parsedDocument: ParsedDocument,
+        to textView: NSTextView,
+        speakerData: SpeakerDataStore
+    ) {
+        guard let textStorage = textView.textStorage else {
+            return
+        }
+
+        let regularFont = NSFont.monospacedSystemFont(
+            ofSize: NSFont.systemFontSize,
+            weight: .regular
+        )
+
+        let boldFont = NSFont.monospacedSystemFont(
+            ofSize: NSFont.systemFontSize,
+            weight: .bold
+        )
+
+        let length = textStorage.length
+
+        textStorage.beginEditing()
+
+        for segment in parsedDocument.segments
+            where segment.speaker == speaker {
+
+            let segmentRange = NSRange(
+                location: segment.range.location,
+                length: segment.range.length
+            )
+
+            guard segmentRange.location >= 0,
+                  segmentRange.location + segmentRange.length <= length
             else {
                 continue
             }
 
             textStorage.addAttribute(
                 .font,
+                value: regularFont,
+                range: segmentRange
+            )
+
+            let speakerRange = NSRange(
+                location: segment.speakerRange.location,
+                length: segment.speakerRange.length
+            )
+
+            textStorage.addAttribute(
+                .font,
                 value: boldFont,
                 range: speakerRange
             )
+
+            if speakerData.data(for: speaker)?.role == .interviewer {
+                textStorage.addAttribute(
+                    .font,
+                    value: boldFont,
+                    range: segmentRange
+                )
+            }
         }
 
         textStorage.endEditing()
