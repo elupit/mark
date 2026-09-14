@@ -29,32 +29,23 @@ struct SpeakerView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var speakerDetails: String?
+    @State private var showRemoveConfirmation = false
 
     var body: some View {
         VStack(spacing: 0) {
-
-            if speakers.isEmpty {
-                ContentUnavailableView(
-                    "No Speakers",
-                    systemImage: "person.2",
-                    description: Text(
-                        "No speaker markers were found in this document."
-                    )
-                )
-                .frame(maxHeight: .infinity)
-
-            } else {
-                Form {
-                    Section("Speakers") {
+            Form {
+                Section("Speakers") {
+                    if speakers.isEmpty {
+                        Label("No speaker markers were found in this document.",
+                              systemImage: "person.2.slash")
+                    } else {
                         ForEach(speakers, id: \.self) { speaker in
                             HStack {
-                                Label(
-                                    speaker,
-                                    systemImage: "person"
-                                )
-
+                                Label(speaker,
+                                      systemImage: "person")
+                                
                                 Spacer()
-
+                                
                                 Picker(
                                     "",
                                     selection: Binding(
@@ -65,10 +56,10 @@ struct SpeakerView: View {
                                         },
                                         set: { role in
                                             let currentData = speakerData.data(for: speaker)
-
+                                            
                                             let notes = currentData?.notes
                                             let color = currentData?.color
-
+                                            
                                             if let role {
                                                 speakerData.set(
                                                     SpeakerData(
@@ -92,7 +83,7 @@ struct SpeakerView: View {
                                                     for: speaker
                                                 )
                                             }
-
+                                            
                                             onSpeakerDataChange(speaker)
                                         }
                                     )
@@ -102,7 +93,8 @@ struct SpeakerView: View {
                                     Text("Informant").tag(SpeakerRole?.some(.informant))
                                 }
                                 .labelsHidden()
-
+                                .scaledToFit()
+                                
                                 Button {
                                     speakerDetails = speaker
                                 } label: {
@@ -133,9 +125,31 @@ struct SpeakerView: View {
                         }
                     }
                 }
-                .formStyle(.grouped)
-                .frame(maxHeight: .infinity)
+                
+                Section {
+                    Text("Speaker information is saved at the end of the file. Hidden when editing in Mark, and visible in other apps.")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                    HStack {
+                        Spacer()
+                        Button("Remove Speaker Information…") {
+                            showRemoveConfirmation = true
+                        }
+                        .confirmationDialog("Remove speaker information?", isPresented: $showRemoveConfirmation) {
+                            Button("Remove", role: .destructive) {
+                                speakerData = SpeakerDataStore()
+                                speakers.forEach(onSpeakerDataChange)
+                            }
+                            
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("This will remove all speaker information added to this document.")
+                        }
+                    }
+                }
             }
+            .formStyle(.grouped)
+            .frame(maxHeight: .infinity)
 
             Divider()
 
@@ -168,6 +182,7 @@ struct SpeakerView: View {
                     ),
                     "ANNA": SpeakerData(
                         role: .informant,
+                        color: .pink,
                         notes: "Mother of the child. Interviewed twice."
                     ),
                     "MICHAEL": SpeakerData(

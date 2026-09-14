@@ -33,6 +33,8 @@ struct TextEditorView: NSViewRepresentable {
 
     let parser = Parser()
     let presentation = Presentation()
+    
+    let textInsets = NSSize(width: 20, height: 40)
 
     func makeCoordinator() -> Coordinator {
         Coordinator(
@@ -62,6 +64,7 @@ struct TextEditorView: NSViewRepresentable {
         textView.isSelectable = true
         textView.isRichText = false
         textView.allowsUndo = true
+        textView.textContainerInset = textInsets
 
         textView.font = .monospacedSystemFont(
             ofSize: NSFont.systemFontSize,
@@ -94,9 +97,7 @@ struct TextEditorView: NSViewRepresentable {
         textView.autoresizingMask = [.width]
 
         textView.delegate = context.coordinator
-
         scrollView.documentView = textView
-
         editorController.textView = textView
 
         if let savedCaretPosition {

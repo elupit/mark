@@ -1,0 +1,47 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "extended-gray:1.00000,1.00000",
+      "srgb:0.96115,0.95300,0.94113,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 0
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 0.7
+      }
+    }
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "fill" : {
+            "solid" : "srgb:0.92016,0.30659,0.23832,1.00000"
+          },
+          "glass" : true,
+          "hidden" : false,
+          "image-name" : "Mark.svg",
+          "name" : "Mark"
+        }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

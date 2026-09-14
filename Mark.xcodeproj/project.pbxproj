@@ -13,10 +13,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0063117A304EF12300256A11 /* Mark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		00C705A1304F0565000F6A29 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		00C705A3304F057A000F6A29 /* CHANGELOG.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CHANGELOG.md; sourceTree = "<group>"; };
 		00C705B030500B74000F6A29 /* LICENSE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = LICENSE.md; sourceTree = "<group>"; };
+		00D68C4230573FA5008173F0 /* Mark.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Mark.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -58,16 +58,8 @@
 				00C705A3304F057A000F6A29 /* CHANGELOG.md */,
 				00C705A1304F0565000F6A29 /* README.md */,
 				0063117C304EF12300256A11 /* Mark */,
-				0063117B304EF12300256A11 /* Products */,
+				00D68C4230573FA5008173F0 /* Mark.app */,
 			);
-			sourceTree = "<group>";
-		};
-		0063117B304EF12300256A11 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				0063117A304EF12300256A11 /* Mark.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -92,7 +84,7 @@
 			packageProductDependencies = (
 			);
 			productName = mark;
-			productReference = 0063117A304EF12300256A11 /* Mark.app */;
+			productReference = 00D68C4230573FA5008173F0 /* Mark.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -120,7 +112,7 @@
 			mainGroup = 00631171304EF12200256A11;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 0063117B304EF12300256A11 /* Products */;
+			productRefGroup = 00631171304EF12200256A11;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -156,11 +148,11 @@
 		00631188304EF12600256A11 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = MarkIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 34;
 				DEVELOPMENT_TEAM = 3KV4DVGSF5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -177,7 +169,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.1.3;
+				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = elupit.mark;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -193,11 +185,11 @@
 		00631189304EF12600256A11 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = MarkIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 32;
+				CURRENT_PROJECT_VERSION = 34;
 				DEVELOPMENT_TEAM = 3KV4DVGSF5;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -214,7 +206,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
-				MARKETING_VERSION = 0.1.3;
+				MARKETING_VERSION = 0.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = elupit.mark;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

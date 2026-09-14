@@ -33,6 +33,10 @@ struct MarkApp: App {
             EditorView(document: file.$document)
         }
         
+        Settings {
+            SettingsView()
+        }
+        
         Window("About Mark", id: "about") {
             AboutView()
                 .frame(width: 250, height: 300)
@@ -56,7 +60,7 @@ struct MarkApp: App {
                 .disabled(document == nil)
             }
             
-            CommandMenu("Transcript") {
+            CommandMenu("Tools") {
                 Button("Speakers") {
                     speakerAction?()
                 }

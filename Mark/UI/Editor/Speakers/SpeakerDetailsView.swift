@@ -33,25 +33,29 @@ struct SpeakerDetailsView: View {
 
     var body: some View {
         Form {
-            Section("Color") {
-                ColorPicker(selection: $color)
-                .onChange(of: color) {
-                    let current = speakerData.data(for: speaker)
-
-                    if current?.role != nil || current?.notes != nil || color != nil {
-                        speakerData.set(
-                            SpeakerData(
-                                role: current?.role,
-                                color: color,
-                                notes: current?.notes
-                            ),
-                            for: speaker
-                        )
-                    } else {
-                        speakerData.removeData(for: speaker)
-                    }
-
-                    onSpeakerDataChange()
+            Section("Formatting") {
+                HStack {
+                    Text("Color")
+                    Spacer()
+                    ColorPicker(selection: $color)
+                        .onChange(of: color) {
+                            let current = speakerData.data(for: speaker)
+                            
+                            if current?.role != nil || current?.notes != nil || color != nil {
+                                speakerData.set(
+                                    SpeakerData(
+                                        role: current?.role,
+                                        color: color,
+                                        notes: current?.notes
+                                    ),
+                                    for: speaker
+                                )
+                            } else {
+                                speakerData.removeData(for: speaker)
+                            }
+                            
+                            onSpeakerDataChange()
+                        }
                 }
             }
 
@@ -63,7 +67,7 @@ struct SpeakerDetailsView: View {
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
-        .frame(width: 320, height: 270)
+        //.frame(width: 320, height: 270)
         .onAppear {
             let current = speakerData.data(for: speaker)
             notes = current?.notes ?? ""
