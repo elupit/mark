@@ -25,10 +25,15 @@ import UniformTypeIdentifiers
 nonisolated struct Document: FileDocument {
     var text: String
     var meta: Metadata
+    var parsedDocumentStore: ParsedDocumentStore
 
-    init(text: String = "", meta: Metadata = Metadata()) {
+    init(
+        text: String = "",
+        meta: Metadata = Metadata()
+    ) {
         self.text = text
         self.meta = meta
+        self.parsedDocumentStore = ParsedDocumentStore(text: text)
     }
 
     static let readableContentTypes = [
@@ -43,8 +48,10 @@ nonisolated struct Document: FileDocument {
         }
         
         let serializedText = Serializer.read(string)
+        
         text = serializedText.text
         meta = serializedText.meta
+        parsedDocumentStore = ParsedDocumentStore(text: text)
     }
     
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
@@ -55,5 +62,10 @@ nonisolated struct Document: FileDocument {
         }
         return .init(regularFileWithContents: data)
         
+    }
+    
+    mutating func updateText(_ newText: String, change: TextChange) {
+        text = newText
+        parsedDocumentStore.update(text: newText, change: change)
     }
 }

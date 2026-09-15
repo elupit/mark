@@ -27,13 +27,11 @@ struct TextEditorView: NSViewRepresentable {
     @Binding var text: String
     @Binding var caretPosition: Int?
     @Binding var isLocked: Bool
+    @Binding var parsedDocumentStore: ParsedDocumentStore
     @Binding var speakerData: SpeakerDataStore
 
     let editorController: EditorController
-
-    let parser = Parser()
     let presentation = Presentation()
-    
     let textInsets = NSSize(width: 20, height: 40)
 
     func makeCoordinator() -> Coordinator {
@@ -41,8 +39,8 @@ struct TextEditorView: NSViewRepresentable {
             text: $text,
             caretPosition: $caretPosition,
             isLocked: $isLocked,
+            parsedDocumentStore: $parsedDocumentStore,
             speakerData: $speakerData,
-            parser: parser,
             presentation: presentation
         )
     }
@@ -73,15 +71,10 @@ struct TextEditorView: NSViewRepresentable {
 
         textView.string = text
 
-        let parsedDocument = parser.parse(text)
-
         presentation.apply(
-            parsedDocument,
+            parsedDocumentStore.parsedDocument,
             to: textView,
-            paragraphRange: NSRange(
-                location: 0,
-                length: textView.string.utf16.count
-            ),
+            paragraphRange: NSRange(location: 0, length: textView.string.utf16.count),
             speakerData: speakerData
         )
 
@@ -116,17 +109,11 @@ struct TextEditorView: NSViewRepresentable {
                 window.makeFirstResponder(textView)
 
                 textView.setSelectedRange(
-                    NSRange(
-                        location: position,
-                        length: 0
-                    )
+                    NSRange(location: position, length: 0)
                 )
-
+                
                 textView.scrollRangeToVisible(
-                    NSRange(
-                        location: position,
-                        length: 0
-                    )
+                    NSRange(location: position, length: 0)
                 )
             }
         }
@@ -150,29 +137,31 @@ struct TextEditorView: NSViewRepresentable {
         @Binding var text: String
         @Binding var caretPosition: Int?
         @Binding var isLocked: Bool
+        @Binding var parsedDocumentStore: ParsedDocumentStore
         @Binding var speakerData: SpeakerDataStore
 
-        let parser: Parser
         let presentation: Presentation
 
         private var editedParagraphRange = NSRange(
             location: 0,
             length: 0
         )
+        
+        private var textChange: TextChange?
 
         init(
             text: Binding<String>,
             caretPosition: Binding<Int?>,
             isLocked: Binding<Bool>,
+            parsedDocumentStore: Binding<ParsedDocumentStore>,
             speakerData: Binding<SpeakerDataStore>,
-            parser: Parser,
             presentation: Presentation
         ) {
             self._text = text
             self._caretPosition = caretPosition
             self._isLocked = isLocked
+            self._parsedDocumentStore = parsedDocumentStore
             self._speakerData = speakerData
-            self.parser = parser
             self.presentation = presentation
         }
 
@@ -199,6 +188,17 @@ struct TextEditorView: NSViewRepresentable {
                 location: affectedCharRange.location,
                 length: replacement.utf16.count
             )
+            
+            textChange = TextChange(
+                oldRange: TextRange(
+                    location: affectedCharRange.location,
+                    length: affectedCharRange.length
+                ),
+                newRange: TextRange(
+                    location: newRange.location,
+                    length: newRange.length
+                )
+            )
 
             let newParagraphRange = newText.paragraphRange(
                 for: newRange
@@ -212,26 +212,29 @@ struct TextEditorView: NSViewRepresentable {
             return true
         }
 
+        /// Updates the text and its parsed structure after an edit.
         func textDidChange(
             _ notification: Notification
         ) {
-
             guard let textView = notification.object as? NSTextView else {
                 return
             }
-
+            
             let newText = textView.string
-
             text = newText
-
-            let parsedDocument = parser.parse(newText)
-
+            
+            if let textChange {
+                parsedDocumentStore.update(text: newText, change: textChange)
+            }
+            
             presentation.apply(
-                parsedDocument,
+                parsedDocumentStore.parsedDocument,
                 to: textView,
                 paragraphRange: editedParagraphRange,
                 speakerData: speakerData
             )
+            
+            textChange = nil
         }
 
         func textViewDidChangeSelection(

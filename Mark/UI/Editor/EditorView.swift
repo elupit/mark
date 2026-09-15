@@ -28,16 +28,13 @@ struct EditorView: View {
     @State private var isSpeakerSheetPresented = false
     @State private var editorController = EditorController()
 
-    private var parsedDocument: ParsedDocument {
-        Parser().parse(document.text)
-    }
-
     var body: some View {
         VStack {
             TextEditorView(
                 text: $document.text,
                 caretPosition: $document.meta.caretPosition,
                 isLocked: $document.meta.isLocked,
+                parsedDocumentStore: $document.parsedDocumentStore,
                 speakerData: $document.meta.speakerData,
                 editorController: editorController
             )
@@ -51,7 +48,7 @@ struct EditorView: View {
         }
         .sheet(isPresented: $isSpeakerSheetPresented) {
             SpeakerView(
-                speakers: parsedDocument.speakers,
+                speakers: document.parsedDocumentStore.parsedDocument.speakers,
                 speakerData: $document.meta.speakerData,
                 onSpeakerDataChange: { speaker in
                     editorController.rerenderSpeaker(

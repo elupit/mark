@@ -1,8 +1,8 @@
 //
-//  ParsedDocument.swift
+//  ParsedDocumentStore.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 09.09.2026.
+//  Created by Mikhail Korzh on 15.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -21,21 +21,26 @@
 
 import Foundation
 
-/// The structural representation produced by the parser.
-nonisolated struct ParsedDocument: Sendable, Equatable {
-    let segments: [Segment]
-}
-
-extension ParsedDocument {
-    var speakers: [String] {
-        var result: [String] = []
-
-        for segment in segments {
-            if !result.contains(segment.speaker) {
-                result.append(segment.speaker)
-            }
-        }
-        
-        return result
+/// Maintains the parsed structure of document text.
+nonisolated struct ParsedDocumentStore {
+    private let parser = Parser()
+    private let incrementalParser = IncrementalParser()
+    
+    private(set) var parsedDocument: ParsedDocument
+    
+    init(text: String = "") {
+        parsedDocument = parser.parse(text)
+    }
+    
+    /// Updates the parsed structure after a text change.
+    mutating func update(
+        text: String,
+        change: TextChange
+    ) {
+        parsedDocument = incrementalParser.update(
+            text: text,
+            document: parsedDocument,
+            change: change
+        )
     }
 }

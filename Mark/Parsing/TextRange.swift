@@ -19,16 +19,33 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
+import Foundation
 
 import Foundation
 
 /// A UTF-16 range inside the document.
-struct TextRange: Sendable, Equatable {
+nonisolated struct TextRange: Sendable, Equatable {
+    
     let location: Int
     let length: Int
-
+    
     /// The first position immediately after the range.
     var upperBound: Int { location + length }
-
+    
+    /// Whether the range contains no characters.
+    var isEmpty: Bool {
+        length == 0
+    }
+    
+    /// Whether this range overlaps another non-empty range.
+    func intersects(_ other: TextRange) -> Bool {
+        location < other.upperBound && other.location < upperBound
+    }
+    
+    /// Whether this range contains a UTF-16 position.
+    func contains(_ position: Int) -> Bool {
+        location <= position && position < upperBound
+    }
+    
     static let zero = TextRange(location: 0, length: 0)
 }

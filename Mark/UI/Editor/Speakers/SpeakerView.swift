@@ -38,6 +38,7 @@ struct SpeakerView: View {
                     if speakers.isEmpty {
                         Label("No speaker markers were found in this document.",
                               systemImage: "person.2.slash")
+                        .foregroundStyle(.secondary)
                     } else {
                         ForEach(speakers, id: \.self) { speaker in
                             HStack {

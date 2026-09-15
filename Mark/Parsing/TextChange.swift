@@ -1,8 +1,8 @@
 //
-//  ParsedDocument.swift
+//  TextChange.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 09.09.2026.
+//  Created by Mikhail Korzh on 15.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,23 +19,7 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-import Foundation
-
-/// The structural representation produced by the parser.
-nonisolated struct ParsedDocument: Sendable, Equatable {
-    let segments: [Segment]
-}
-
-extension ParsedDocument {
-    var speakers: [String] {
-        var result: [String] = []
-
-        for segment in segments {
-            if !result.contains(segment.speaker) {
-                result.append(segment.speaker)
-            }
-        }
-        
-        return result
-    }
+nonisolated struct TextChange: Sendable, Equatable {
+    let oldRange: TextRange
+    let newRange: TextRange
 }

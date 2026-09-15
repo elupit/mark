@@ -25,7 +25,7 @@ import Foundation
 ///
 /// A segment starts with a speaker marker and continues until
 /// another speaker marker or the end of the document.
-struct Segment: Sendable, Equatable {
+nonisolated struct Segment: Sendable, Equatable {
     /// The speaker label without the colon.
     let speaker: String
     /// The complete segment, including the speaker marker.

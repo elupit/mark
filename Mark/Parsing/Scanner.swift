@@ -25,7 +25,7 @@ import Foundation
 ///
 /// The scanner knows nothing about interview syntax.
 /// It only provides sequential access to the requested part of the document.
-struct Scanner {
+nonisolated struct Scanner {
     private let units: String.UTF16View
     private var index: String.UTF16View.Index
     private let endPosition: Int

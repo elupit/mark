@@ -25,7 +25,7 @@ import Foundation
 ///
 /// The text itself remains the source of truth. The parser only produces
 /// structural information describing speaker segments and their ranges.
-struct Parser {
+nonisolated struct Parser {
 
     /// Parses the complete document.
     ///
@@ -111,9 +111,9 @@ struct Parser {
 
 // MARK: - Speaker marker
 
-private extension Parser {
+nonisolated private extension Parser {
 
-    struct SpeakerMarker {
+    nonisolated struct SpeakerMarker {
         let speaker: String
         let rangeStart: Int
         let speakerRange: TextRange
@@ -190,7 +190,7 @@ private extension Parser {
 
 // MARK: - Character helpers
 
-private extension Parser {
+nonisolated extension Parser {
 
     /// Returns true for LF and CR line breaks.
     func isNewline(_ character: UInt16) -> Bool {

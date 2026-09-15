@@ -8,6 +8,7 @@
 - Lock and unlock document
 - Speaker model implementation
 - Speaker role, color and notes
+- Incremental parsing and document logic updates
 
 ## Mark 0.1.0
 
