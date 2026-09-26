@@ -21,11 +21,9 @@
 
 import SwiftUI
 
-@main
-struct MarkApp: App {
+@main struct MarkApp: App {
     
-    @FocusedValue(\.documentUIState)
-    private var documentUIState
+    @FocusedValue(\.documentUIState) private var documentUIState
         
     var body: some Scene {
         DocumentGroup { document in
@@ -34,11 +32,35 @@ struct MarkApp: App {
             MarkDocument()
         }
         .commands {
-            CommandMenu("Tools") {
-                Button("Speakers") {
-                    documentUIState?.isSpeakerSheetPresented = true
+            CommandGroup(after: .importExport) {
+                Button {
+                    documentUIState?.toggleLock?()
+                } label: {
+                    Label(
+                        documentUIState?.isLocked == true ? "Unlock Document" : "Lock Document",
+                        systemImage: documentUIState?.isLocked == true ? "lock.open" : "lock"
+                    )
                 }
+                .labelStyle(.titleAndIcon)
                 .disabled(documentUIState == nil)
+            }
+            
+            CommandMenu("Interview") {
+                Button {
+                    documentUIState?.isSpeakerSheetPresented = true
+                } label: {
+                    Label("Speakers", systemImage: "person.2")
+                }
+                .labelStyle(.titleAndIcon)
+                .disabled(documentUIState == nil)
+                
+                #if DEBUG
+                Divider()
+
+                Button("Open Parser Debug…") {
+                    ParserDebug.openHistory()
+                }
+                #endif
             }
         }
         

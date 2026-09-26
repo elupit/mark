@@ -50,7 +50,7 @@ struct TextEditorView: NSViewRepresentable {
         
         let textView = NSTextView()
         
-        textView.isEditable = true
+        textView.isEditable = !document.meta.isLocked
         textView.isSelectable = true
         textView.allowsUndo = true
         textView.isRichText = false
@@ -68,6 +68,7 @@ struct TextEditorView: NSViewRepresentable {
         guard let textView = scrollView.documentView as? NSTextView
         else { return }
         
+        textView.isEditable = !document.meta.isLocked
         context.coordinator.updateTextIfNeeded(document.text, in: textView)
     }
 }

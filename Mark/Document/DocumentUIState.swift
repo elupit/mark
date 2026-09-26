@@ -24,6 +24,9 @@ import SwiftUI
 @Observable
 final class DocumentUIState {
     var isSpeakerSheetPresented = false
+    var isLocked = false
+
+    var toggleLock: (() -> Void)?
 }
 
 // MARK: - Focused value

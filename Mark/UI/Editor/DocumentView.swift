@@ -25,8 +25,7 @@ struct DocumentView: View {
 
     @Bindable var document: MarkDocument
 
-    @Environment(\.undoManager)
-    private var undoManager
+    @Environment(\.undoManager) private var undoManager
 
     @State private var parsedDocumentStore = ParsedDocumentStore()
     @State private var UIState = DocumentUIState()
@@ -40,6 +39,16 @@ struct DocumentView: View {
             editorState: editorState
         )
         .focusedSceneValue(\.documentUIState, UIState)
+        .onAppear {
+            UIState.isLocked = document.meta.isLocked
+
+            UIState.toggleLock = {
+                changeLock(
+                    from: document.meta.isLocked,
+                    to: !document.meta.isLocked
+                )
+            }
+        }
         .sheet(isPresented: $UIState.isSpeakerSheetPresented) {
             SpeakerSheet(
                 speakers: parsedDocumentStore.speakers,
@@ -49,6 +58,7 @@ struct DocumentView: View {
                 guard oldSpeakerData != newSpeakerData else { return }
                 changeSpeakerData(from: oldSpeakerData, to: newSpeakerData)
             }
+            .frame(width: 500, height: 400)
         }
     }
     
@@ -61,6 +71,19 @@ struct DocumentView: View {
         }
 
         undoManager?.setActionName("Change Speaker Roles")
+    }
+    
+    func changeLock(from old: Bool, to new: Bool) {
+        document.meta.isLocked = new
+        UIState.isLocked = new
+
+        undoManager?.registerUndo(withTarget: document) { document in
+            self.changeLock(from: new, to: old)
+        }
+
+        undoManager?.setActionName(
+            new ? "Lock Document" : "Unlock Document"
+        )
     }
 }
 

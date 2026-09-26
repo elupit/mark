@@ -113,6 +113,13 @@ nonisolated struct Parser {
            change.oldRange.length >= documentLength {
 
             let newDocument = parse(text)
+            
+            #if DEBUG
+            ParserDebug.recordFull(
+            text: text,
+            segments: newDocument.segments
+            )
+            #endif
 
             return ParseResult(
                 document: newDocument,
@@ -124,6 +131,13 @@ nonisolated struct Parser {
         guard let firstIndex = affectedSegmentIndex(in: document, on: change)
         else {
             let newDocument = parse(text)
+            
+            #if DEBUG
+            ParserDebug.recordFull(
+            text: text,
+            segments: newDocument.segments
+            )
+            #endif
                         
             return ParseResult(
                 document: newDocument,
@@ -141,14 +155,7 @@ nonisolated struct Parser {
 
         // Include the previous segment when a boundary is removed.
 
-        let startIndex: Int
-
-        if firstIndex > 0,
-           change.oldRange.upperBound == document.segments[firstIndex].range.location {
-            startIndex = firstIndex - 1
-        } else {
-            startIndex = firstIndex
-        }
+        let startIndex = firstIndex > 0 ? firstIndex - 1 : firstIndex
 
         let updatedLastRange = updatedRange(
             document.segments[lastIndex].range,
@@ -160,19 +167,16 @@ nonisolated struct Parser {
             change.newRange.upperBound
         )
 
-        let newEnd = max(
-            affectedEnd,
-            paragraphEnd(in: text, from: affectedEnd)
+        let newEnd = min(
+            text.utf16.count,
+            max(affectedEnd, paragraphEnd(in: text, from: affectedEnd))
         )
 
-        let paragraphStart = paragraphStart(
-            in: text,
-            from: change.newRange.location
-        )
+        let rangeStart = document.segments[startIndex].range.location
 
         let newRange = TextRange(
-            location: paragraphStart,
-            length: newEnd - paragraphStart
+            location: rangeStart,
+            length: newEnd - rangeStart
         )
 
         let localText = substring(text, range: newRange)
@@ -201,6 +205,15 @@ nonisolated struct Parser {
                 )
             }
         }
+        
+        #if DEBUG
+        ParserDebug.recordIncremental(
+            text: text,
+            change: change,
+            oldSegments: oldSegments,
+            newSegments: newSegments
+        )
+        #endif
 
         return ParseResult(
             document: ParsedDocument(segments: segments),
@@ -395,24 +408,6 @@ nonisolated extension Parser {
         }
 
         return end
-    }
-    
-    /// Returns the beginning of the paragraph containing the given UTF-16 position.
-    private func paragraphStart(in text: String, from position: Int) -> Int {
-        let utf16 = text.utf16
-        var start = position
-
-        while start > 0 {
-            let index = utf16.index(utf16.startIndex, offsetBy: start - 1)
-
-            if isNewline(utf16[index]) {
-                break
-            }
-
-            start -= 1
-        }
-
-        return start
     }
 }
 

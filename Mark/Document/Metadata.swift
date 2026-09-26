@@ -23,4 +23,5 @@ import Foundation
 
 nonisolated struct Metadata: Codable, Sendable {
     var speakers = SpeakerDataStore()
+    var isLocked = false
 }

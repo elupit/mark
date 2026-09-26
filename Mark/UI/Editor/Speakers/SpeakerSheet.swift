@@ -55,14 +55,19 @@ struct SpeakerSheet: View {
             } else {
                 Form {
                     Section {
-                        ForEach(speakers.speakers, id: \.name) { speaker in
-                            Picker(speaker.name, selection: roleBinding(for: speaker.name)) {
-                                Text("None").tag(SpeakerRole?.none)
-                                ForEach(SpeakerRole.allCases, id: \.self) { role in
-                                    Text(role.title).tag(Optional(role))
+                        ForEach(speakers.speakers) { speaker in
+                            HStack {
+                                Label(speaker.name, systemImage: "person")
+                                Spacer()
+                                Picker(speaker.name, selection: roleBinding(for: speaker.name)) {
+                                    Text("None").tag(SpeakerRole?.none)
+                                    ForEach(SpeakerRole.allCases, id: \.self) { role in
+                                        Text(role.title).tag(Optional(role))
+                                    }
                                 }
+                                .labelsHidden()
+                                .help("Assign a role to this speaker.")
                             }
-                            .help("Assign a role to this speaker.")
                         }
                     } header: {
                         VStack(alignment: .leading, spacing: 4) {
@@ -94,7 +99,7 @@ struct SpeakerSheet: View {
             }
             .padding()
         }
-        .frame(width: 400, height: 300)
+        .frame(idealWidth: 500, minHeight: 300)
     }
 
     private func roleBinding(for speaker: String) -> Binding<SpeakerRole?> {
