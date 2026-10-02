@@ -1,8 +1,8 @@
 //
-//  ParsedDocumentStore.swift
+//  TextChange.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 23.09.2026.
+//  Created by Mikhail Korzh on 02.10.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,26 +19,19 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-import Foundation
+/// Represents a change in text, defined by its old and new ranges.
+nonisolated struct TextChange: Sendable, Equatable {
+    let oldRange: TextRange
+    let newRange: TextRange
 
-@Observable
-final class ParsedDocumentStore {
-    
-    private let parser = Parser()
-    let speakers = SpeakerRegistry()
-    private(set) var document = ParsedDocument(segments: [])
+    func updatedRange(_ range: TextRange) -> TextRange {
+        let delta = newRange.length - oldRange.length
 
-    func parse(_ text: String) {
-        document = parser.parse(text)
-        speakers.setDocument(document)
-    }
+        if range.upperBound <= oldRange.location { return range }
+        if range.location >= oldRange.upperBound {
+            return TextRange(location: range.location + delta, length: range.length)
+        }
 
-    @discardableResult func update(_ text: String, on change: TextChange) -> ParseResult {
-        let result = parser.reparse(text, in: document, on: change)
-        
-        document = result.document
-        speakers.update(removing: result.oldSegments, adding: result.newSegments)
-        
-        return result
+        return TextRange(location: range.location, length: max(0, range.length + delta))
     }
 }

@@ -25,7 +25,8 @@ import UniformTypeIdentifiers
 @Observable
 final class MarkDocument: Document {
     
-    static let readableContentTypes: [UTType] = [.mark]
+    static let readableContentTypes: [UTType] = [.mark, .plainText]
+    static let writableContentTypes: [UTType] = [.mark]
     
     var text: String
     var meta: Metadata
@@ -131,6 +132,10 @@ nonisolated extension MarkDocument {
 
         return Data(content.utf8)
     }
+    
+    nonisolated private static func textContent(from snapshot: MarkSnapshot) -> Data {
+        Data(snapshot.text.utf8)
+    }
 }
 
 // MARK: - Helpers
@@ -140,16 +145,6 @@ nonisolated extension MarkDocument {
 struct MarkSnapshot: Sendable {
     let text: String
     let meta: Metadata
-}
-
-/// Defines the boundaries for the internal metadata block within a document.
-/// These markers are used to separate the document's text content from its hidden metadata layer.
-private enum MetaBlockFormat {
-    nonisolated static let startMarker =
-        "\n\n/* MARK SECTION START\n" +
-        "\nWhoops! You've stumbled into the secret depths of Mark's internal data layer. Unless you're a wizard who knows exactly what they're doing, it's best to leave this part untouched!\n\n"
-
-    nonisolated static let endMarker = "\n\nMARK SECTION END */"
 }
 
 /// Represents the location of the metadata block within the document's text.

@@ -48,12 +48,13 @@ struct TextEditorView: NSViewRepresentable {
         scrollView.borderType = .noBorder
         scrollView.drawsBackground = false
         
-        let textView = NSTextView()
+        let textView = MarkTextView()
         
         textView.isEditable = !document.meta.isLocked
         textView.isSelectable = true
         textView.allowsUndo = true
         textView.isRichText = false
+        textView.importsGraphics = false
         textView.textContainerInset = textInsets
         
         context.coordinator.configure(textView)

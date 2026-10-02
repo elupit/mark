@@ -27,6 +27,7 @@ final class DocumentUIState {
     var isLocked = false
 
     var toggleLock: (() -> Void)?
+    var export: (() -> Void)?
 }
 
 // MARK: - Focused value

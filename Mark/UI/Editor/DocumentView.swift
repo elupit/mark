@@ -20,35 +20,37 @@
 //
 
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 struct DocumentView: View {
-
+    
     @Bindable var document: MarkDocument
-
     @Environment(\.undoManager) private var undoManager
-
+    
     @State private var parsedDocumentStore = ParsedDocumentStore()
     @State private var UIState = DocumentUIState()
     @State private var editorState = EditorState()
-
+    
+    @State private var isExporting = false
+    
     var body: some View {
-
+        
         TextEditorView(
             document: document,
             store: parsedDocumentStore,
             editorState: editorState
         )
+        
+            // Document UI State
         .focusedSceneValue(\.documentUIState, UIState)
         .onAppear {
             UIState.isLocked = document.meta.isLocked
-
-            UIState.toggleLock = {
-                changeLock(
-                    from: document.meta.isLocked,
-                    to: !document.meta.isLocked
-                )
-            }
+            UIState.toggleLock = { changeLock( from: document.meta.isLocked, to: !document.meta.isLocked ) }
+            UIState.export = { isExporting = true }
         }
+        
+            // Sheet
         .sheet(isPresented: $UIState.isSpeakerSheetPresented) {
             SpeakerSheet(
                 speakers: parsedDocumentStore.speakers,
@@ -60,7 +62,20 @@ struct DocumentView: View {
             }
             .frame(width: 500, height: 400)
         }
+        
+            // Export
+        .fileExporter(
+            isPresented: $isExporting,
+            document: MarkTextExport(text: document.text),
+            contentType: .plainText,
+            defaultFilename: "Untitled"
+        ) { _ in }
     }
+}
+
+    // MARK: - Helpers
+
+extension DocumentView {
     
     func changeSpeakerData(from old: SpeakerDataStore, to new: SpeakerDataStore) {
         document.meta.speakers = new

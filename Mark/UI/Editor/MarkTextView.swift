@@ -1,8 +1,8 @@
 //
-//  ParsedDocumentStore.swift
+//  MarkTextView.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 23.09.2026.
+//  Created by Mikhail Korzh on 26.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,26 +19,9 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-import Foundation
+import AppKit
 
-@Observable
-final class ParsedDocumentStore {
-    
-    private let parser = Parser()
-    let speakers = SpeakerRegistry()
-    private(set) var document = ParsedDocument(segments: [])
-
-    func parse(_ text: String) {
-        document = parser.parse(text)
-        speakers.setDocument(document)
-    }
-
-    @discardableResult func update(_ text: String, on change: TextChange) -> ParseResult {
-        let result = parser.reparse(text, in: document, on: change)
-        
-        document = result.document
-        speakers.update(removing: result.oldSegments, adding: result.newSegments)
-        
-        return result
-    }
+final class MarkTextView: NSTextView {
+    override func changeFont(_ sender: Any?) { }
+    override func changeColor(_ sender: Any?) { }
 }

@@ -1,8 +1,8 @@
 //
-//  ParsedDocumentStore.swift
+//  String.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 23.09.2026.
+//  Created by Mikhail Korzh on 01.10.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -21,24 +21,11 @@
 
 import Foundation
 
-@Observable
-final class ParsedDocumentStore {
-    
-    private let parser = Parser()
-    let speakers = SpeakerRegistry()
-    private(set) var document = ParsedDocument(segments: [])
+nonisolated extension String {
+    func substring(with range: TextRange) -> String {
+        let start = String.Index(utf16Offset: range.location, in: self)
+        let end = String.Index(utf16Offset: range.upperBound, in: self)
 
-    func parse(_ text: String) {
-        document = parser.parse(text)
-        speakers.setDocument(document)
-    }
-
-    @discardableResult func update(_ text: String, on change: TextChange) -> ParseResult {
-        let result = parser.reparse(text, in: document, on: change)
-        
-        document = result.document
-        speakers.update(removing: result.oldSegments, adding: result.newSegments)
-        
-        return result
+        return String(self[start..<end])
     }
 }

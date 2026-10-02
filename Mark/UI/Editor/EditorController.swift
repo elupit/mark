@@ -33,8 +33,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
     weak var textView: NSTextView?
     
     private var textChange: TextChange?
-    private var editedParagraphRange = NSRange(location: 0, length: 0)
     
+    // Formatting
     private let regularFont = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
     private let boldFont = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .bold)
     
@@ -47,52 +47,46 @@ final class EditorController: NSObject, NSTextViewDelegate {
     }
     
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
-        let oldText = textView.string as NSString
-        let oldParagraphRange = oldText.paragraphRange(for: affectedCharRange)
-
+        
         let replacement = replacementString ?? ""
-        let newText = oldText.replacingCharacters(in: affectedCharRange, with: replacement) as NSString
         let newRange = NSRange(location: affectedCharRange.location, length: replacement.utf16.count)
         
         textChange = TextChange(
             oldRange: TextRange(location: affectedCharRange.location, length: affectedCharRange.length),
             newRange: TextRange(location: newRange.location, length: newRange.length)
         )
-
-        let newParagraphRange = newText.paragraphRange(for: newRange)
-        editedParagraphRange = NSUnionRange(oldParagraphRange, newParagraphRange)
-
+        
         return true
     }
     
     /// Updates the text and its parsed structure after an edit.
     func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else { return }
-        
+
         document.text = textView.string
-        
+
         if let textChange {
-            store.update(document.text, on: textChange)
+            let result = store.update(document.text, on: textChange)
+            applyIncrementalFormatting(in: result)
         } else {
             store.parse(document.text)
+            reformatEntireDocument()
         }
-        
-        applyFormatting(to: textView, paragraphRange: editedParagraphRange)
-        textChange = nil
+
+        self.textChange = nil
     }
     
     /// Updates the text view if the new text is different from the current text.
     func updateTextIfNeeded(_ text: String, in textView: NSTextView) {
         guard textView.string != text else { return }
+        
+        harvest( )
 
         textChange = nil
         textView.string = text
         store.parse(text)
 
-        applyFormatting(
-            to: textView,
-            paragraphRange: NSRange(location: 0, length: textView.string.utf16.count)
-        )
+        reformatEntireDocument()
     }
     
     /// Configures the text view with the initial text and applies formatting.
@@ -103,117 +97,98 @@ final class EditorController: NSObject, NSTextViewDelegate {
         textView.string = document.text
         store.parse(document.text)
         
-        applyFormatting(to: textView, paragraphRange: NSRange(location: 0, length: textView.string.utf16.count))
+        reformatEntireDocument()
     }
     
     /// Updates text formatting for segments whose speaker roles have changed.
     /// Called after editing speaker metadata to avoid reformatting the whole document.
     func updateSpeakerFormatting(old: SpeakerDataStore, new: SpeakerDataStore) {
-        guard let textView else { return }
-
+        guard let textStorage = textView?.textStorage else { return }
         let changedSpeakers = Set(old.speakers.keys)
-        .union(new.speakers.keys)
-        .filter {
-            old.role(for: $0) != new.role(for: $0)
-        }
+            .union(new.speakers.keys)
+            .filter { old.role(for: $0) != new.role(for: $0) }
 
-        guard !changedSpeakers.isEmpty else {
-            return
-        }
-
-        let affectedSegments = store.document.segments.filter {
+        let segments = store.document.segments.filter {
             changedSpeakers.contains($0.speaker)
         }
 
-        guard !affectedSegments.isEmpty else { return }
+        textStorage.beginEditing()
+        defer { textStorage.endEditing() }
 
-        for segment in affectedSegments {
-            applyFormatting(to: textView, paragraphRange: segment.range.nsRange)
+        for segment in segments {
+            textStorage.addAttribute(.font, value: regularFont, range: segment.range.nsRange)
         }
+
+        applySpeakersFormatting(to: textStorage, for: segments)
     }
 }
 
 // MARK: - Formatting
 
 private extension EditorController {
-
-    func applyFormatting(to textView: NSTextView, paragraphRange: NSRange) {
-        guard let textStorage = textView.textStorage else { return }
+    
+    /// Resets and applies all formatting styles across the entire document.
+    ///
+    /// This method clears existing font attributes and reapplies both speaker and escape
+    /// formatting to the full text within the current text view.
+    func reformatEntireDocument() {
+        guard let textView = self.textView,
+              let textStorage = textView.textStorage
+        else { return }
 
         let length = textStorage.length
         guard length > 0 else { return }
 
-        let location = min(max(paragraphRange.location, 0), length)
-        let safeRange = NSRange(
-            location: location,
-            length: min(max(paragraphRange.length, 0), length - location)
-        )
-
-        guard safeRange.length > 0 else { return }
-
-        let range = TextRange(
-            location: safeRange.location,
-            length: safeRange.length
-        )
+        let range = TextRange(location: 0, length: textView.string.utf16.count)
+        guard range.length > 0 else { return }
 
         textStorage.beginEditing()
         defer { textStorage.endEditing() }
 
-        textStorage.removeAttribute(.font, range: safeRange)
-        textStorage.addAttribute(.font, value: regularFont, range: safeRange)
+        textStorage.removeAttribute(.font, range: range.nsRange)
+        textStorage.addAttribute(.font, value: regularFont, range: range.nsRange)
 
-        for segment in store.document.segments {
-            guard segment.range.intersects(range) else { continue }
-
-            textStorage.addAttribute(
-                .font,
-                value: boldFont,
-                range: segment.speakerRange.nsRange
-            )
-            
-            if document.meta.speakers.isInterviewer(segment.speaker) {
-                textStorage.addAttribute(
-                    .font,
-                    value: boldFont,
-                    range: segment.range.nsRange
-                )
-            }
-        }
+        applySpeakersFormatting(to: textStorage, for: store.document.segments)
+        applyEscapeFormatting(to: textStorage, range: range.nsRange)
+    }
+    
+    /// Updates formatting for only the segments that have changed.
+    ///
+    /// This method clears the font attributes for old segments and applies updated
+    /// speaker and escape formatting to the new segments within the text storage.
+    ///
+    /// - Parameter result: A `ParseResult` object containing the old and new segments to process.
+    func applyIncrementalFormatting(in result: ParseResult) {
+        guard let textView = self.textView,
+              let textStorage = textView.textStorage
+        else { return }
         
-        applyEscapeFormatting(to: textStorage, range: safeRange)
-    }
-    
-    /// Applies font styling to a single transcript segment.
-    /// Interviewer segments use bold text, while speaker markers are always bold.
-    func applyFormatting(to textView: NSTextView, segment: Segment) {
-        guard let textStorage = textView.textStorage else { return }
-        let range = segment.range.nsRange
-        guard NSMaxRange(range) <= textStorage.length else { return }
-
         textStorage.beginEditing()
         defer { textStorage.endEditing() }
-        textStorage.removeAttribute(.font, range: range)
+        
+        textStorage.removeAttribute(.font, range: result.affectedRange.nsRange)
+        textStorage.addAttribute(.font, value: regularFont, range: result.affectedRange.nsRange)
 
-        let font = document.meta.speakers.isInterviewer(segment.speaker) ? boldFont : regularFont
-
-        textStorage.addAttribute(
-            .font,
-            value: font,
-            range: range
-        )
-
-        // Speaker marker always bold
-        textStorage.addAttribute(
-            .font,
-            value: boldFont,
-            range: segment.speakerRange.nsRange
-        )
+        applySpeakersFormatting(to: textStorage, for: result.newSegments)
+        if let range = result.newSegments.range {
+            applyEscapeFormatting(to: textStorage, range: range.nsRange)
+        }
     }
     
+    // Formatting helpers
+    
+    /// Applies escape formatting to the specified range within the text storage.
+    ///
+    /// This method scans the text for escaped colons (`\:`), which are represented
+    /// by the character codes 92 (backslash) and 58 (colon). When found, it applies
+    /// a tertiary label color to the backslash to visually distinguish it as an escape character.
+    ///
+    /// - Parameters:
+    ///   - textStorage: The text storage object containing the text to be formatted.
+    ///   - range: The range of text to scan and format.
     func applyEscapeFormatting(to textStorage: NSTextStorage, range: NSRange) {
         let text = textStorage.string as NSString
         let end = range.location + range.length - 1
-
         guard end > range.location else { return }
 
         for index in range.location..<end {
@@ -226,6 +201,27 @@ private extension EditorController {
                     range: NSRange(location: index, length: 1)
                 )
             }
+        }
+    }
+    
+    /// Applies speaker-specific formatting to a given text storage.
+    ///
+    /// This method iterates through the provided segments and applies bold or regular fonts
+    /// depending on whether the speaker is an interviewer. It also bolds the speaker's name.
+    ///
+    /// - Parameters:
+    ///   - textStorage: The `NSTextStorage` instance to format.
+    ///   - segments: An array of `Segment` objects representing the parts of the text to format.
+    ///   - range: An optional `TextRange` limiting the formatting to a specific portion of the text.
+    ///            If `nil`, the entire text storage is formatted.
+    func applySpeakersFormatting(to textStorage: NSTextStorage, for segments: [Segment], in range: TextRange? = nil) {
+        let range = range ?? TextRange(location: 0, length: textStorage.length)
+        
+        for segment in segments {
+            guard segment.range.intersects(range) else { continue }
+            let font = document.meta.speakers.isInterviewer(segment.speaker) ? boldFont : regularFont
+            textStorage.addAttribute(.font, value: font, range: segment.range.nsRange)
+            textStorage.addAttribute(.font, value: boldFont, range: segment.speakerRange.nsRange)
         }
     }
 }

@@ -2,11 +2,8 @@
 //  Parser.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 23.09.2026.
+//  Created by Mikhail Korzh on 26.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
-//
-//  Originally drafted with AI assistance;
-//  heavily refactored and reviewed by a human.
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -21,360 +18,302 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
+//  ---
+//
+//  Inspired by Beat
+//  Copyright © Kaikki on haurasta Oy & Lauri-Matti Parppei 2019-2026.
+//
+//  ---
+//
+//  This small file contains hours I spent trying to systematize
+//  the code and account for the various parsing scenarios. The
+//  first version of the Parser, largely developed with the help
+//  of AI, simply did not work, and this implementation was born
+//  out of that failure. Although it is not particularly clean yet,
+//  as far as I can tell, it works better for now.
+//
+//  Attempts to systematize the code also turned into attempts
+//  to systematize my own thoughts, which came to me amid the
+//  twists and turns of life. So working on this file has brought
+//  not only frustrating bugs, but also a certain therapeutic
+//  effect.
+//
+//  — Mikhail Korzh, 02.10.2026
+//
 
 import Foundation
 
-/// Parses interview transcript structure from plain text.
 nonisolated struct Parser {
     
     // MARK: - Initial parsing
     
-    /// Parses the provided plain text into a structured document.
-    ///
-    /// This method scans the input text for speaker markers at the beginning of paragraphs
-    /// and divides the text into segments associated with each speaker.
-    ///
-    /// - Parameter text: The plain text string to be parsed.
-    /// - Returns: A `ParsedDocument` containing the array of parsed segments.
     func parse(_ text: String) -> ParsedDocument {
         var scanner = Scanner(text)
         var segments: [Segment] = []
+        var currentSpeaker: SpeakerLabel?
         
-        var currentSpeaker: String?
-        var currentRangeStart: Int?
-        var currentSpeakerRange: TextRange?
-        var currentTextStart: Int?
+        // We start from the beginning
+        var isLineStart = true
         
-        var isAtParagraphStart = true
-        
+        // Go through the text until the end.
         while !scanner.isAtEnd {
-            // A speaker marker can only appear at the beginning of a paragraph.
-            if isAtParagraphStart,
-               let marker = parseSpeakerMarker(text: text, scanner: &scanner) {
-
+            if isLineStart,
+               let next = parseSpeaker(text, scanner: &scanner) {
+                
                 // Finish the previous segment before starting a new one.
-                if let speaker = currentSpeaker,
-                   let rangeStart = currentRangeStart,
-                   let speakerRange = currentSpeakerRange,
-                   let textStart = currentTextStart {
+                if let previous = currentSpeaker {
+                    let textEnd = textEnd(
+                        in: text,
+                        from: previous.textStart,
+                        to: next.rangeStart
+                    )
                     
-                    let textEnd = textEnd(in: text, from: textStart, to: marker.rangeStart)
-                    segments.append(
-                        Segment(
-                            speaker: speaker,
-                            range: TextRange(location: rangeStart, length: marker.rangeStart - rangeStart),
-                            speakerRange: speakerRange,
-                            textRange: TextRange(location: textStart, length: textEnd - textStart)
+                    let segment = Segment(
+                        speaker: previous.speaker,
+                        range: TextRange(
+                            location: previous.rangeStart,
+                            length: next.rangeStart - previous.rangeStart
+                        ),
+                        speakerRange: previous.speakerRange,
+                        textRange: TextRange(
+                            location: previous.textStart,
+                            length: textEnd - previous.textStart
                         )
                     )
+                    
+                    segments.append(
+                        segment
+                    )
                 }
-
-                currentSpeaker = marker.speaker
-                currentRangeStart = marker.rangeStart
-                currentSpeakerRange = marker.speakerRange
-                currentTextStart = marker.textStart
-
-                isAtParagraphStart = false
+                
+                currentSpeaker = next
+                isLineStart = false
+                
                 continue
             }
-
+            
+            //  If no speaker is found (or it's not the start of a line), scanner.advance() moves to the next character.
             guard let character = scanner.advance() else { break }
-            if isNewline(character) { isAtParagraphStart = true }
-            else { isAtParagraphStart = false }
+            
+            if character.isNewline { isLineStart = true }
+            else { isLineStart = false}
         }
-
-        // Finish the final segment.
-        if let speaker = currentSpeaker,
-           let rangeStart = currentRangeStart,
-           let speakerRange = currentSpeakerRange,
-           let textStart = currentTextStart {
-            let textEnd = textEnd(in: text,from: textStart, to: scanner.position)
-
+        
+        // Append the final segment.
+        if let speaker = currentSpeaker {
+            let textEnd = textEnd(
+                in: text,
+                from: speaker.textStart,
+                to: scanner.position
+            )
+            
             segments.append(
                 Segment(
-                    speaker: speaker,
-                    range: TextRange(location: rangeStart, length: scanner.position - rangeStart),
-                    speakerRange: speakerRange,
-                    textRange: TextRange(location: textStart, length: textEnd - textStart)
+                    speaker: speaker.speaker,
+                    range: TextRange(
+                        location: speaker.rangeStart,
+                        length: scanner.position - speaker.rangeStart
+                    ),
+                    speakerRange: speaker.speakerRange,
+                    textRange: TextRange(
+                        location: speaker.textStart,
+                        length: textEnd - speaker.textStart
+                    )
                 )
             )
         }
-
+        
         return ParsedDocument(segments: segments)
     }
     
-    // MARK: - Incremental parsing
-
-    func update(_ text: String, in document: ParsedDocument, on change: TextChange) -> ParseResult {
-        let documentLength = document.segments.last?.range.upperBound ?? 0
-
-        // Reparse the whole document after replacing all text.
-        if change.oldRange.location == 0 &&
-           change.oldRange.length >= documentLength {
-
-            let newDocument = parse(text)
-            
-            #if DEBUG
-            ParserDebug.recordFull(
-            text: text,
-            segments: newDocument.segments
-            )
-            #endif
-
-            return ParseResult(
-                document: newDocument,
-                oldSegments: document.segments,
-                newSegments: newDocument.segments
-            )
+    func reparse(_ text: String, in document: ParsedDocument, on change: TextChange) -> ParseResult {
+        
+        let affectedIndices = document.segments.indices.filter {
+            segmentIsAffected(document.segments[$0], by: change.oldRange)
         }
-    
-        guard let firstIndex = affectedSegmentIndex(in: document, on: change)
+        
+        guard let affectedStart = affectedIndices.first,
+              let affectedEnd = affectedIndices.last
         else {
-            let newDocument = parse(text)
-            
-            #if DEBUG
-            ParserDebug.recordFull(
-            text: text,
-            segments: newDocument.segments
-            )
-            #endif
-                        
+            let doc = parse(text)
             return ParseResult(
-                document: newDocument,
+                document: doc,
                 oldSegments: document.segments,
-                newSegments: newDocument.segments
+                newSegments: doc.segments,
+                affectedRange: TextRange(location: 0, length: text.utf16.count)
             )
         }
 
+        var start = affectedStart
+        var end = affectedEnd
 
-        let lastIndex = lastAffectedSegmentIndex(
-            in: document,
-            on: change,
-            firstIndex: firstIndex
-        )
-
-        // Include the previous segment when a boundary is removed.
-
-        let startIndex = firstIndex > 0 ? firstIndex - 1 : firstIndex
-
-        let updatedLastRange = updatedRange(
-            document.segments[lastIndex].range,
-            for: change
-        )
-
-        let affectedEnd = max(
-            updatedLastRange.upperBound,
-            change.newRange.upperBound
-        )
-
-        let newEnd = min(
-            text.utf16.count,
-            max(affectedEnd, paragraphEnd(in: text, from: affectedEnd))
-        )
-
-        let rangeStart = document.segments[startIndex].range.location
-
-        let newRange = TextRange(
-            location: rangeStart,
-            length: newEnd - rangeStart
-        )
-
-        let localText = substring(text, range: newRange)
-        let parsed = parse(localText)
-
-        var segments = document.segments
-        segments.removeSubrange(startIndex...lastIndex)
-
-        let oldSegments = Array(
-            document.segments[startIndex...lastIndex]
-        )
-        let newSegments = parsed.segments.map {
-            shifted($0, by: newRange.location)
-        }
-
-        segments.insert(contentsOf: newSegments, at: startIndex)
-
-        let firstShiftedIndex = startIndex + newSegments.count
+        // Expand only when a neighbour exists
+        if start > document.segments.startIndex { start -= 1 }
+        if end < document.segments.count - 1 { end += 1 }
+        
+        // Save old segmaents
+        let oldSegments = Array(document.segments[start...end])
         let delta = change.newRange.length - change.oldRange.length
 
+        let segmentsRange = TextRange(
+            location: oldSegments.first!.range.location,
+            length: oldSegments.reduce(0) {
+                max($0, $1.range.upperBound)
+            } - oldSegments.first!.range.location
+        )
+        
+        let oldRange = segmentsRange.union(change.oldRange)
+        let newRange: TextRange
+        
+        // Making it safe...
+        if change.oldRange.length == 0 {
+            newRange = TextRange(location: oldRange.location, length: oldRange.length + change.newRange.length)
+        } else {
+            newRange = TextRange(location: oldRange.location, length: max(0, oldRange.length + delta))
+        }
+        
+        let localText = text.substring(with: newRange)
+        let parsedText = parse(localText)
+        
+        let newSegments = parsedText.segments.map {
+            shifted($0, by: newRange.location)
+        }
+        
+        var segments = document.segments
+        segments.removeSubrange(start...end)
+        segments.insert(contentsOf: newSegments, at: start)
+        
+        let followingSegmentsStart = start + newSegments.count
+
         if delta != 0 {
-            for i in firstShiftedIndex..<segments.count {
-                segments[i] = shifted(
-                    segments[i],
-                    by: delta
-                )
+            for i in followingSegmentsStart..<segments.count {
+                segments[i] = shifted(segments[i], by: delta)
             }
         }
         
         #if DEBUG
-        ParserDebug.recordIncremental(
-            text: text,
-            change: change,
-            oldSegments: oldSegments,
-            newSegments: newSegments
-        )
-        #endif
+        let full = Parser().parse(text)
+        let incremental = ParsedDocument(segments: segments)
+        
+        if full != incremental {
+            harvest("""
+            *Change*
+            oldRange: \(change.oldRange)
+            newRange: \(change.newRange)
+            delta: \(change.newRange.length - change.oldRange.length)
+            changed text: \(text.substring(with: change.newRange))
+            
+            FULL PARSE — \(full.segments.map {
+                "\($0.speaker): \($0.range) | \($0.textRange)"
+            }.joined(separator: "\n"))
 
+            INCREMENTAL — \(incremental.segments.map {
+                "\($0.speaker): \($0.range) | \($0.textRange)"
+            }.joined(separator: "\n"))
+
+            """)
+        }
+        #endif
+        
         return ParseResult(
             document: ParsedDocument(segments: segments),
             oldSegments: oldSegments,
-            newSegments: newSegments
+            newSegments: newSegments,
+            affectedRange: newRange
         )
     }
     
-    /// Finds the segment containing the changed text or insertion point.
-    private func affectedSegmentIndex(in document: ParsedDocument, on change: TextChange) -> Int? {
-        if !change.oldRange.isEmpty {
-            return document.segments.firstIndex {
-                $0.range.intersects(change.oldRange)
+    /// Tries to parse a speaker label at the scanner's current paragraph position.
+    ///
+    /// A label has the form `Speaker: text`.
+    private func parseSpeaker(_ text: String, scanner: inout Scanner) -> SpeakerLabel? {
+        
+        // Get current position
+        let labelStart = scanner.position
+        
+        guard let firstCharacter = scanner.peek(),
+              !firstCharacter.isNewline,
+              !firstCharacter.isWhitespace
+        else { return nil }
+        
+        var sc = scanner
+        var colonPosition: Int?
+        
+        // Let's find a colon position
+        while let character = sc.peek() {
+            if character.isColon {
+                
+                guard let prevChar = sc.peek(offset: -1), !prevChar.isEscapeCharacter
+                else {
+                    sc.advance()
+                    continue
+                }
+                
+                colonPosition = sc.position
+                break
             }
+            
+            if character.isNewline { return nil }
+            sc.advance()
         }
         
-        return document.segments.firstIndex {
-            $0.range.contains(change.oldRange.location)
-            || $0.range.upperBound == change.oldRange.location
+        guard let colonPosition else { return nil }
+        
+        let labelLength = colonPosition - labelStart
+        guard labelLength > 0 else { return nil }
+        
+        let speakerRange = TextRange(location: labelStart, length: labelLength)
+        let speaker = substring(text, range: speakerRange)
+        
+        //  Since the colon's position was found earlier using a `sc` scanner, this loop catches the main scanner up to that point.
+        while scanner.position <= colonPosition {
+            scanner.advance()
         }
+        
+        //  Skip any whitespace (like spaces or tabs) that might appear between the colon and the start of the actual text.
+        while let character = scanner.peek(), character.isWhitespace {
+            scanner.advance()
+        }
+        
+        return SpeakerLabel(
+            speaker: speaker,
+            rangeStart: labelStart,
+            speakerRange: speakerRange,
+            textStart: scanner.position
+        )
     }
     
-    /// Finds the last segment that may be affected by a text change.
-    private func lastAffectedSegmentIndex(in document: ParsedDocument, on change: TextChange, firstIndex: Int) -> Int {
-        let oldEnd = change.oldRange.upperBound
-
-        var lastIndex = document.segments.lastIndex {
-            $0.range.location <= oldEnd
-        } ?? firstIndex
-
-        if lastIndex + 1 < document.segments.count,
-           document.segments[lastIndex].range.upperBound == oldEnd {
-            lastIndex += 1
+    private func segmentIsAffected(_ segment: Segment, by range: TextRange) -> Bool {
+        if range.length == 0 {
+            return segment.range.contains(range.location)
+                || segment.range.upperBound == range.location
         }
 
-        return lastIndex
+        return segment.range.location < range.upperBound
+                && range.location < segment.range.upperBound
     }
     
-    /// Adjusts an old range to its position in the new text.
-    private func updatedRange(_ range: TextRange, for change: TextChange) -> TextRange {
-        let delta = change.newRange.length - change.oldRange.length
-
-        if range.upperBound <= change.oldRange.location {
-            return range
-        }
-
-        if range.location >= change.oldRange.upperBound {
-            return TextRange(location: range.location + delta, length: range.length)
-        }
-
-        return TextRange(location: range.location, length: max(0, range.length + delta))
-    }
-    
-    /// Converts a locally parsed segment into an absolute document segment.
     private func shifted(_ segment: Segment, by offset: Int) -> Segment {
         Segment(
             speaker: segment.speaker,
-            range: shifted(segment.range, by: offset),
-            speakerRange: shifted(segment.speakerRange, by: offset),
-            textRange: shifted(segment.textRange, by: offset)
+            range: segment.range.shifted(by: offset),
+            speakerRange: segment.speakerRange.shifted(by: offset),
+            textRange: segment.textRange.shifted(by: offset)
         )
-    }
-    
-    /// Shifts a UTF-16 range by a document offset.
-    private func shifted(_ range: TextRange, by offset: Int) -> TextRange {
-        TextRange(location: range.location + offset, length: range.length)
     }
 }
 
-// MARK: - Speaker marker
-
-nonisolated private extension Parser {
-
-    nonisolated struct SpeakerMarker {
+nonisolated extension Parser {
+    nonisolated struct SpeakerLabel {
         let speaker: String
         let rangeStart: Int
         let speakerRange: TextRange
         let textStart: Int
     }
-
-    /// Tries to parse a speaker marker at the scanner's current paragraph position.
-    ///
-    /// A marker has the form `SPEAKER: text` and must begin at the
-    /// beginning of a paragraph.
-    func parseSpeakerMarker(text: String, scanner: inout Scanner) -> SpeakerMarker? {
-        let markerStart = scanner.position
-
-        guard let firstCharacter = scanner.peek(),
-              !isHorizontalWhitespace(firstCharacter),
-              !isNewline(firstCharacter) else {
-            return nil
-        }
-
-        var lookahead = scanner
-        var colonPosition: Int?
-
-        while let character = lookahead.peek() {
-            if character == 58 {
-                guard lookahead.peek(offset: -1) != 92 else {
-                    lookahead.advance()
-                    continue
-                }
-
-                colonPosition = lookahead.position
-                break
-            }
-
-            if isNewline(character) { return nil }
-            lookahead.advance()
-        }
-
-        guard let colonPosition else { return nil }
-
-        let speakerLength = colonPosition - markerStart
-        guard speakerLength > 0 else { return nil }
-
-        let speakerRange = TextRange(location: markerStart, length: speakerLength)
-        let speaker = substring(text, range: speakerRange)
-
-        while scanner.position <= colonPosition {
-            scanner.advance()
-        }
-
-        while let character = scanner.peek(), isHorizontalWhitespace(character) {
-            scanner.advance()
-        }
-
-        return SpeakerMarker(
-            speaker: speaker,
-            rangeStart: markerStart,
-            speakerRange: speakerRange,
-            textStart: scanner.position
-        )
-    }
 }
 
-// MARK: - Character helpers
-
-nonisolated extension Parser {
-
-    /// Returns true for LF and CR line breaks.
-    func isNewline(_ character: UInt16) -> Bool {
-        character == 10 || character == 13
-    }
-
-    /// Returns true for spaces and tabs.
-    func isHorizontalWhitespace(_ character: UInt16) -> Bool {
-        character == 32 || character == 9
-    }
-
-    /// Returns the end of spoken text without trailing line breaks.
-    func textEnd(in text: String, from start: Int, to end: Int) -> Int {
-        var result = end
-        while result > start {
-            let index = text.utf16.index(text.utf16.startIndex, offsetBy: result - 1)
-            guard isNewline(text.utf16[index]) else { break }
-            result -= 1
-        }
-        return result
-    }
-
+nonisolated private extension Parser {
+    
     /// Extracts a string from a UTF-16 range.
     func substring(_ text: String, range: TextRange) -> String {
         let utf16 = text.utf16
@@ -382,9 +321,7 @@ nonisolated extension Parser {
         guard range.location >= 0,
               range.length >= 0,
               range.location + range.length <= utf16.count
-        else {
-            return ""
-        }
+        else { return "" }
 
         let start = utf16.index(utf16.startIndex, offsetBy: range.location)
         let end = utf16.index(start, offsetBy: range.length)
@@ -392,33 +329,16 @@ nonisolated extension Parser {
         return String(decoding: utf16[start..<end], as: UTF16.self)
     }
     
-    /// Returns the end of the paragraph containing the given UTF-16 position.
-    private func paragraphEnd(in text: String, from position: Int) -> Int {
-        let utf16 = text.utf16
-        var end = position
-
-        while end < utf16.count {
-            let index = utf16.index(utf16.startIndex, offsetBy: end)
-
-            if isNewline(utf16[index]) {
-                break
-            }
-
-            end += 1
+    /// Returns the end of spoken text without trailing line breaks.
+    func textEnd(in text: String, from start: Int, to end: Int) -> Int {
+        var result = end
+        while result > start {
+            let index = text.utf16.index(text.utf16.startIndex, offsetBy: result - 1)
+            guard text.utf16[index].isNewline else { break }
+            result -= 1
         }
-
-        return end
+        return result
     }
 }
 
-/// Represents a change in text, defined by its old and new ranges.
-nonisolated struct TextChange: Sendable, Equatable {
-    let oldRange: TextRange
-    let newRange: TextRange
-}
-
-nonisolated struct ParseResult: Sendable {
-    let document: ParsedDocument
-    let oldSegments: [Segment]
-    let newSegments: [Segment]
-}
+// Kõik saab ükskord läbi: nii hea kui ka halb...

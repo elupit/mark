@@ -1,8 +1,8 @@
 //
-//  ParsedDocumentStore.swift
+//  Array.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 23.09.2026.
+//  Created by Mikhail Korzh on 02.10.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -21,24 +21,14 @@
 
 import Foundation
 
-@Observable
-final class ParsedDocumentStore {
-    
-    private let parser = Parser()
-    let speakers = SpeakerRegistry()
-    private(set) var document = ParsedDocument(segments: [])
+extension Array where Element == Segment {
 
-    func parse(_ text: String) {
-        document = parser.parse(text)
-        speakers.setDocument(document)
-    }
-
-    @discardableResult func update(_ text: String, on change: TextChange) -> ParseResult {
-        let result = parser.reparse(text, in: document, on: change)
-        
-        document = result.document
-        speakers.update(removing: result.oldSegments, adding: result.newSegments)
-        
-        return result
+    /// The combined text range of all segments in the array.
+    ///
+    /// This property calculates the total span from the start of the first segment
+    /// to the end of the last segment. Returns `nil` if the array is empty.
+    var range: TextRange? {
+        guard let first, let last else { return nil }
+        return TextRange(location: first.range.location, length: last.range.upperBound - first.range.location)
     }
 }

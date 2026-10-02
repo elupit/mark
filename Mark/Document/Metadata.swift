@@ -21,7 +21,20 @@
 
 import Foundation
 
+/// Represents the metadata associated with a document.
 nonisolated struct Metadata: Codable, Sendable {
+    /// The data store containing speaker information.
     var speakers = SpeakerDataStore()
+    /// A boolean value indicating whether the `TextEditorView` content is locked for editing.
     var isLocked = false
+}
+
+/// Defines the boundaries for the internal metadata block within a document.
+/// These markers are used to separate the document's text content from its hidden metadata layer.
+nonisolated enum MetaBlockFormat {
+    static let startMarker =
+        "\n\n/* MARK SECTION START\n" +
+        "\nWhoops! You've stumbled into the secret depths of Mark's internal data layer. Unless you're a wizard who knows exactly what they're doing, it's best to leave this part untouched!\n\n"
+
+    static let endMarker = "\n\nMARK SECTION END */"
 }

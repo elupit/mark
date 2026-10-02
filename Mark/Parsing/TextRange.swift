@@ -57,5 +57,20 @@ nonisolated struct TextRange: Sendable, Equatable {
         location <= position && position < upperBound
     }
     
+    /// Returns a new range shifted by the specified offset.
+    func shifted(by offset: Int) -> TextRange {
+        TextRange(location: location + offset, length: length)
+    }
+    
+    /// Returns a new range that is the union of this range and the specified range.
+    /// - Parameter other: The range to combine with this range.
+    /// - Returns: A new range that encompasses both ranges.
+    func union(_ other: TextRange) -> TextRange {
+        let start = min(location, other.location)
+        let end = max(upperBound, other.upperBound)
+
+        return TextRange(location: start, length: end - start)
+    }
+    
     static let zero = TextRange(location: 0, length: 0)
 }

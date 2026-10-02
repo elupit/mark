@@ -1,8 +1,8 @@
 //
-//  ParsedDocumentStore.swift
+//  MarkTextExport.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 23.09.2026.
+//  Created by Mikhail Korzh on 26.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,26 +19,21 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-import Foundation
+import SwiftUI
+import UniformTypeIdentifiers
 
-@Observable
-final class ParsedDocumentStore {
+@MainActor
+final class MarkTextExport: WritableDocument {
+    static let writableContentTypes: [UTType] = [.plainText]
+
+    let text: String
+    init(text: String) { self.text = text }
+
+    nonisolated func writer( configuration: sending WriteConfiguration) -> sending FileWrapperDocumentWriter<String> {
+        FileWrapperDocumentWriter(configuration) { snapshot, _ in
+            FileWrapper(regularFileWithContents: Data(snapshot.utf8))
+        }
+    }
     
-    private let parser = Parser()
-    let speakers = SpeakerRegistry()
-    private(set) var document = ParsedDocument(segments: [])
-
-    func parse(_ text: String) {
-        document = parser.parse(text)
-        speakers.setDocument(document)
-    }
-
-    @discardableResult func update(_ text: String, on change: TextChange) -> ParseResult {
-        let result = parser.reparse(text, in: document, on: change)
-        
-        document = result.document
-        speakers.update(removing: result.oldSegments, adding: result.newSegments)
-        
-        return result
-    }
+    func snapshot(contentType: UTType) async throws -> sending String { text }
 }

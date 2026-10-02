@@ -24,6 +24,7 @@ import SwiftUI
 @main struct MarkApp: App {
     
     @FocusedValue(\.documentUIState) private var documentUIState
+    @Environment(\.openWindow) private var openWindow
         
     var body: some Scene {
         DocumentGroup { document in
@@ -31,8 +32,26 @@ import SwiftUI
         } makeDocument: { configuration, context in
             MarkDocument()
         }
+            
+        // Commands
         .commands {
+            CommandGroup(replacing: CommandGroupPlacement.appInfo) {
+                Button {
+                    openWindow(id: "about")
+                } label: {
+                    Text("About Mark")
+                }
+            }
+    
             CommandGroup(after: .importExport) {
+                
+                Button("Export as Plain Text…") {
+                    documentUIState?.export?()
+                }
+                .disabled(documentUIState == nil)
+                
+                Divider()
+                
                 Button {
                     documentUIState?.toggleLock?()
                 } label: {
@@ -53,21 +72,22 @@ import SwiftUI
                 }
                 .labelStyle(.titleAndIcon)
                 .disabled(documentUIState == nil)
-                
-                #if DEBUG
-                Divider()
-
-                Button("Open Parser Debug…") {
-                    ParserDebug.openHistory()
-                }
-                #endif
             }
         }
+        
+        Window("About Mark", id: "about") {
+            AboutView()
+                .toolbar(removing: .title)
+                .toolbarBackground(.hidden, for: .windowToolbar)
+                .windowMinimizeBehavior(.disabled)
+        }
+        .windowResizability(.contentSize)
+        .restorationBehavior(.disabled)
         
         /*
         Settings {
             SettingsView()
         }
-         */
+        */
     }
 }
