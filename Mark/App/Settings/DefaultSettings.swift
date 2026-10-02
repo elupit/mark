@@ -1,8 +1,8 @@
 //
-//  SettingsView.swift
+//  DefaultSettings.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 21.09.2026.
+//  Created by Mikhail Korzh on 02.10.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -17,24 +17,9 @@
 //
 //  You should have received a copy of the GNU General Public License
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
-//
 
-import SwiftUI
-
-struct SettingsView: View {
-    var body: some View {
-        TabView {
-            Tab("General", systemImage: "gearshape") {
-                GeneralSettingsView()
-            }
-            Tab("Editor", systemImage: "square.and.pencil") {
-                EditorSettingsView()
-            }
-        }
-        .frame(width: 600)
-    }
-}
-
-#Preview {
-    SettingsView()
+enum DefaultSettings {
+    static let defaults: [String: Any] = [
+        DefaultKeys.Editor.fontSize: 13.0
+    ]
 }

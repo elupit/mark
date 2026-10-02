@@ -35,15 +35,19 @@ final class EditorController: NSObject, NSTextViewDelegate {
     private var textChange: TextChange?
     
     // Formatting
-    private let regularFont = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .regular)
-    private let boldFont = NSFont.monospacedSystemFont(ofSize: NSFont.systemFontSize, weight: .bold)
+    private var fontSize: Double
+    
+    private var regularFont: NSFont { NSFont.monospacedSystemFont(ofSize: self.fontSize, weight: .regular) }
+    private var boldFont: NSFont { NSFont.monospacedSystemFont(ofSize: self.fontSize, weight: .bold) }
     
     init(
         document: MarkDocument,
-        parsedDocumentStore: ParsedDocumentStore
+        parsedDocumentStore: ParsedDocumentStore,
+        fontSize: Double
     ) {
         self.document = document
         self.store = parsedDocumentStore
+        self.fontSize = fontSize
     }
     
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
@@ -87,6 +91,13 @@ final class EditorController: NSObject, NSTextViewDelegate {
         store.parse(text)
 
         reformatEntireDocument()
+    }
+    
+    func updateSettingsIfNeeded(fontSize: Double) {
+        if self.fontSize != fontSize {
+            self.fontSize = fontSize
+            reformatEntireDocument()
+        }
     }
     
     /// Configures the text view with the initial text and applies formatting.

@@ -23,23 +23,25 @@
 //  Inspired by Beat
 //  Copyright © Kaikki on haurasta Oy & Lauri-Matti Parppei 2019-2026.
 //
-//  ---
-//
-//  This small file contains hours I spent trying to systematize
-//  the code and account for the various parsing scenarios. The
-//  first version of the Parser, largely developed with the help
-//  of AI, simply did not work, and this implementation was born
-//  out of that failure. Although it is not particularly clean yet,
-//  as far as I can tell, it works better for now.
-//
-//  Attempts to systematize the code also turned into attempts
-//  to systematize my own thoughts, which came to me amid the
-//  twists and turns of life. So working on this file has brought
-//  not only frustrating bugs, but also a certain therapeutic
-//  effect.
-//
-//  — Mikhail Korzh, 02.10.2026
-//
+
+/*
+ 
+ This small file reflects hours I spent trying to systematize
+ the code and account for the various parsing scenarios. The
+ first version of the Parser, largely developed with the help
+ of AI, simply did not work, and this implementation was born
+ out of that failure. Although it is not particularly clean yet,
+ as far as I can tell, it works better for the time being.
+ 
+ Attempts to organize the code also turned into attempts
+ to structure my own thoughts, which came to me amid the
+ twists and turns of life. So working on this file has brought
+ not only frustrating bugs, but also a certain therapeutic
+ effect.
+ 
+ — Mikhail Korzh, 02.10.2026
+ 
+ */
 
 import Foundation
 

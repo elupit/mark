@@ -2,13 +2,13 @@
 
 Mark is a minimal, private, and fully open-source tool for working with interview materials.
 
-**Compatibility:** Requires macOS 27.0 or later.
-
 ## About Mark
 
 It’s a personal project by a social scientist who needed a convenient, affordable, and native macOS app for qualitative research. Mark was heavily inspired by the care and attention put into [Beat](https://github.com/lmparppei/Beat) by Lauri-Matti Parppei.
 
 The person behind Mark is not a professional programmer, which definitely shows in the code. If you want to borrow or reuse any parts of it, please do so with caution under the [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html) license.
+
+Requires macOS 27.0 or later.
 
 Created with love and hope for a better future.
 

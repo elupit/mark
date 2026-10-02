@@ -21,12 +21,39 @@
 
 import SwiftUI
 
-struct GeneralSettingsView: View {    
+struct GeneralSettingsView: View {
+    
+    @State private var showingResetConfirmation = false
+    
     var body: some View {
         Form {
-            
+            Section("Reset Mark") {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading) {
+                        Text("Reset Settings")
+                        Text("Resets all settings to their default values.")
+                            .padding(.top, 1)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Reset") { showingResetConfirmation = true }
+                }
+            }
         }
         .formStyle(.grouped)
+        .confirmationDialog("Reset Settings?", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
+            Button("Reset", role: .destructive) { resetSettings() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("All Mark settings will be reset to their default values.")
+        }
+    }
+    
+    func resetSettings() {
+        for key in DefaultSettings.defaults.keys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
 }
 

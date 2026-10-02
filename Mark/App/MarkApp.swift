@@ -25,6 +25,13 @@ import SwiftUI
     
     @FocusedValue(\.documentUIState) private var documentUIState
     @Environment(\.openWindow) private var openWindow
+    
+    init() {
+        // Register default settings
+        UserDefaults.standard.register(
+            defaults: DefaultSettings.defaults
+        )
+    }
         
     var body: some Scene {
         DocumentGroup { document in
@@ -84,10 +91,9 @@ import SwiftUI
         .windowResizability(.contentSize)
         .restorationBehavior(.disabled)
         
-        /*
+        
         Settings {
             SettingsView()
         }
-        */
     }
 }

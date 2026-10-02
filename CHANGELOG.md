@@ -7,6 +7,7 @@
 
 - Import and export plain text files
 - Rewritten parsing and formatting engines
+- Change editor text size
 - About window
 
 ## Mark 0.1.0
