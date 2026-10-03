@@ -24,21 +24,28 @@ import AppKit
 
 struct EditorSettingsView: View {
 
-    @AppStorage(DefaultKeys.Editor.fontName)    private var fontName    = DefaultSettings.editorFontName
-    @AppStorage(DefaultKeys.Editor.fontSize)    private var fontSize    = DefaultSettings.editorFontSize
-    @AppStorage(DefaultKeys.Editor.textWidth)   private var textWidth   = DefaultSettings.editorTextWidth
+    @AppStorage(DefaultKeys.Editor.fontName)        private var fontName        = DefaultSettings.editorFontName
+    @AppStorage(DefaultKeys.Editor.fontSize)        private var fontSize        = DefaultSettings.editorFontSize
+    @AppStorage(DefaultKeys.Editor.lineSpacing)
+    private var lineSpacingRaw = DefaultSettings.editorLineSpacing.rawValue
+    @AppStorage(DefaultKeys.Editor.paragraphSpacing)
+    private var paragraphSpacingRaw = DefaultSettings.editorParagraphSpacing.rawValue
+    @AppStorage(DefaultKeys.Editor.textWidth)       private var textWidth       = DefaultSettings.editorTextWidth
     
     @AppStorage(DefaultKeys.Editor.interviewerBold) private var interviewerBold = DefaultSettings.editorInterviewerBold
     
     @State private var fontPicker = FontPicker()
     @State private var showFontWarning = false
     @State private var unsupportedFontName = ""
+    
+    private var lineSpacing: LineSpacing { LineSpacing(rawValue: lineSpacingRaw) ?? .normal }
+    private var paragraphSpacing: ParagraphSpacing { ParagraphSpacing(rawValue: paragraphSpacingRaw) ?? .oneLine }
 
     var body: some View {
         Form {
             Section("Typography") {
                 // Font
-                HStack {
+                HStack(alignment: .firstTextBaseline) {
                     Text("Font")
                     Spacer()
                     Button(fontName) { showFontPanel() }
@@ -48,19 +55,35 @@ struct EditorSettingsView: View {
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                             .frame(width: 20, alignment: .trailing)
-
+                        
                         Text("pt")
                             .foregroundStyle(.secondary)
                             .accessibilityHidden(true)
                     }
-                        .accessibilityLabel("\(Int(fontSize)) points")
+                    .accessibilityLabel("\(Int(fontSize)) points")
                     Stepper("Font Size", value: $fontSize, in: 10...28, step: 1 )
                         .labelsHidden()
                 }
                 
-                // Text Width
-                HStack {
-                    Text("Text Width")
+                // Line spacing
+                Picker("Line Spacing", selection: $lineSpacingRaw) {
+                    ForEach(LineSpacing.allCases) { spacing in
+                        Text(spacing.title).tag(spacing.rawValue)
+                    }
+                }
+                
+                // Paragraph spacing
+                Picker("Paragraph Spacing", selection: $paragraphSpacingRaw) {
+                    ForEach(ParagraphSpacing.allCases) { spacing in
+                        Text(spacing.title).tag(spacing.rawValue)
+                    }
+                }
+            }
+            
+            Section {
+                // Text width
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Text Column Width")
                     Spacer()
                     HStack(spacing: 2) {
                         Text("\(Int(textWidth))")
@@ -79,7 +102,8 @@ struct EditorSettingsView: View {
                 }
             }
             
-            Section("Formatting") {
+            Section("Speaker Formatting") {
+                // Interviewer text
                 Toggle("Bold Interviewer Text", isOn: $interviewerBold)
             }
         }

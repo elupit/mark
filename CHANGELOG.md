@@ -3,11 +3,11 @@
 > [!NOTE]
 > Mark is in pre-release development. Semantic versioning does not apply before version 1.0.0, so version numbers reflect development stages rather than stable public releases.
 
-## Mark 0.2.0 (in progress)
+## Mark 0.2.0
 
 - Import and export plain text files
 - Rewritten parsing and formatting engines
-- Change editor settings
+- Editor view and speaker formatting settings
 - About window
 
 ## Mark 0.1.0

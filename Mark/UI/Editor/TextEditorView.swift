@@ -30,12 +30,14 @@ struct TextEditorView: NSViewRepresentable {
     
     let fontName: String
     let fontSize: Double
+    let lineSpacing: LineSpacing
+    let paragraphSpacing: ParagraphSpacing
     let textWidth: Double
     
     let interviewerBold: Bool
     
-    let textInsets = NSSize(width: 30, height: 40)
-    
+    let textInsets = NSSize(width: 84, height: 84) // Margins: 6 * default fontSize
+        
     typealias NSViewType = NSScrollView
     
     func makeCoordinator() -> EditorController {
@@ -70,6 +72,8 @@ struct TextEditorView: NSViewRepresentable {
             textView,
             fontName: fontName,
             fontSize: fontSize,
+            lineSpacing: lineSpacing,
+            paragraphSpacing: paragraphSpacing,
             textWidth: textWidth,
             interviewerBold: interviewerBold
         )
@@ -85,7 +89,20 @@ struct TextEditorView: NSViewRepresentable {
         else { return }
         
         textView.isEditable = !document.meta.isLocked
-        context.coordinator.updateSettingsIfNeeded(fontName: fontName, fontSize: fontSize, textWidth: textWidth, interviewerBold: interviewerBold)
-        context.coordinator.updateTextIfNeeded(document.text, in: textView)
+        
+        context.coordinator.updateSettingsIfNeeded(
+            fontName: fontName,
+            fontSize: fontSize,
+            lineSpacing: lineSpacing,
+            paragraphSpacing: paragraphSpacing,
+            textWidth: textWidth,
+            interviewerBold:
+                interviewerBold
+        )
+        
+        context.coordinator.updateTextIfNeeded(
+            document.text,
+            in: textView
+        )
     }
 }

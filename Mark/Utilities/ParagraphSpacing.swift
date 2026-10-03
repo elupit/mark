@@ -1,8 +1,8 @@
 //
-//  DefaultKeys.swift
+//  ParagraphSpacing.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 02.10.2026.
+//  Created by Mikhail Korzh on 03.10.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,14 +19,31 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-enum DefaultKeys {
-    enum Editor {
-        static let fontName = "editor.fontName"
-        static let fontSize = "editor.fontSize"
-        static let lineSpacing = "editor.lineSpacing"
-        static let paragraphSpacing = "editor.paragraphSpacing"
-        static let textWidth = "editor.textWidth"
-        
-        static let interviewerBold = "editor.interviewerBold"
+import Foundation
+
+enum ParagraphSpacing: String, CaseIterable, Identifiable {
+    case none
+    case oneLine
+    case oneAndHalfLines
+    case twoLines
+
+    var id: Self { self }
+
+    var multiplier: Double {
+        switch self {
+        case .none: return 0
+        case .oneLine: return 1
+        case .oneAndHalfLines: return 1.5
+        case .twoLines: return 2
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .none: return "None"
+        case .oneLine: return "Single"
+        case .oneAndHalfLines: return "1.5 Lines"
+        case .twoLines: return "Double"
+        }
     }
 }

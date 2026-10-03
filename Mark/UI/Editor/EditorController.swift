@@ -37,12 +37,21 @@ final class EditorController: NSObject, NSTextViewDelegate {
     // Formatting
     private var fontName = DefaultSettings.editorFontName
     private var fontSize = DefaultSettings.editorFontSize
+    private var lineSpacing = DefaultSettings.editorLineSpacing
+    private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
     private var textWidth = DefaultSettings.editorTextWidth
     
     private var interviewerBold = DefaultSettings.editorInterviewerBold
     
     private var regularFont: NSFont { makeFont(weight: .regular) }
     private var boldFont: NSFont { makeFont(weight: .bold) }
+    
+    private var paragraphStyle: NSParagraphStyle {
+        let style = NSMutableParagraphStyle()
+        style.lineSpacing = fontSize * lineSpacing.multiplier
+        style.paragraphSpacing = fontSize * paragraphSpacing.multiplier
+        return style
+    }
     
     init(
         document: MarkDocument,
@@ -95,20 +104,39 @@ final class EditorController: NSObject, NSTextViewDelegate {
     }
     
     /// Updates the font settings and reformats the document if the new values differ from the current ones.
-    func updateSettingsIfNeeded(fontName: String, fontSize: Double, textWidth: Double, interviewerBold: Bool) {
+    func updateSettingsIfNeeded(
+        fontName: String,
+        fontSize: Double,
+        lineSpacing: LineSpacing,
+        paragraphSpacing: ParagraphSpacing,
+        textWidth: Double,
+        interviewerBold: Bool
+    ) {
         let fontChanged = self.fontName != fontName || self.fontSize != fontSize
+        let lineOrParagraphSpacingChanged = self.lineSpacing != lineSpacing || self.paragraphSpacing != paragraphSpacing
         let widthChanged = self.textWidth != textWidth
         let interviewerStyleChanged = self.interviewerBold != interviewerBold
 
-        guard fontChanged || widthChanged || interviewerStyleChanged else { return }
+        guard fontChanged
+                || lineOrParagraphSpacingChanged
+                || widthChanged
+                || interviewerStyleChanged
+        else { return }
 
         self.fontName = fontName
         self.fontSize = fontSize
+        self.lineSpacing = lineSpacing
+        self.paragraphSpacing = paragraphSpacing
         self.textWidth = textWidth
         self.interviewerBold = interviewerBold
 
-        if widthChanged { updateTextWidth() }
-        if fontChanged || interviewerStyleChanged { reformatEntireDocument() }
+        if widthChanged {
+            updateTextWidth()
+        }
+
+        if fontChanged || interviewerStyleChanged || lineOrParagraphSpacingChanged {
+            reformatEntireDocument()
+        }
     }
     
     /// Configures the text view with the specified font and layout settings.
@@ -119,6 +147,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
         _ textView: NSTextView,
         fontName: String,
         fontSize: Double,
+        lineSpacing: LineSpacing,
+        paragraphSpacing: ParagraphSpacing,
         textWidth: Double,
         interviewerBold: Bool
     ) {
@@ -126,6 +156,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
 
         self.fontName = fontName
         self.fontSize = fontSize
+        self.lineSpacing = lineSpacing
+        self.paragraphSpacing = paragraphSpacing
         self.textWidth = textWidth
         self.interviewerBold = interviewerBold
 
@@ -191,7 +223,7 @@ private extension EditorController {
         defer { textStorage.endEditing() }
 
         textStorage.removeAttribute(.font, range: range.nsRange)
-        textStorage.addAttribute(.font, value: regularFont, range: range.nsRange)
+        textStorage.addAttributes([.font: regularFont, .paragraphStyle: paragraphStyle], range: range.nsRange)
 
         applySpeakersFormatting(to: textStorage, for: store.document.segments)
         applyEscapeFormatting(to: textStorage, range: range.nsRange)
@@ -231,7 +263,7 @@ private extension EditorController {
         defer { textStorage.endEditing() }
         
         textStorage.removeAttribute(.font, range: result.affectedRange.nsRange)
-        textStorage.addAttribute(.font, value: regularFont, range: result.affectedRange.nsRange)
+        textStorage.addAttributes([.font: regularFont, .paragraphStyle: paragraphStyle], range: result.affectedRange.nsRange)
 
         applySpeakersFormatting(to: textStorage, for: result.newSegments)
         if let range = result.newSegments.range {
