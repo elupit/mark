@@ -22,6 +22,28 @@
 import AppKit
 
 final class MarkTextView: NSTextView {
+    
+    var onResize: (() -> Void)?
+    var textWidth: CGFloat = DefaultSettings.editorTextWidth {
+        didSet { needsLayout = true }
+    }
+
+    override func resizeSubviews(withOldSize oldSize: NSSize) {
+        super.resizeSubviews(withOldSize: oldSize)
+        onResize?()
+    }
+    
+    override var textContainerOrigin: NSPoint {
+        guard let textContainer else { return super.textContainerOrigin }
+
+        let containerWidth = textContainer.containerSize.width
+        let availableWidth = bounds.width - textContainerInset.width * 2
+
+        let offset = max(0, (availableWidth - containerWidth) / 2)
+
+        return NSPoint(x: textContainerInset.width + offset, y: super.textContainerOrigin.y)
+    }
+
     override func changeFont(_ sender: Any?) { }
     override func changeColor(_ sender: Any?) { }
 }

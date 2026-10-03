@@ -19,7 +19,18 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 enum DefaultSettings {
+    
+    // Editor
+    static let editorFontName = "System"
+    static let editorFontSize = 14.0
+    static let editorTextWidth = 700.0
+    static let editorInterviewerBold = true
+    
     static let defaults: [String: Any] = [
-        DefaultKeys.Editor.fontSize: 13.0
+        // Editor
+        DefaultKeys.Editor.fontName: editorFontName,
+        DefaultKeys.Editor.fontSize: editorFontSize,
+        DefaultKeys.Editor.textWidth: editorTextWidth,
+        DefaultKeys.Editor.interviewerBold: editorInterviewerBold
     ]
 }

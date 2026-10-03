@@ -21,6 +21,10 @@
 
 enum DefaultKeys {
     enum Editor {
+        static let fontName = "editor.fontName"
         static let fontSize = "editor.fontSize"
+        static let textWidth = "editor.textWidth"
+        
+        static let interviewerBold = "editor.interviewerBold"
     }
 }

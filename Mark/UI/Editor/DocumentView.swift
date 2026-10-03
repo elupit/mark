@@ -28,7 +28,13 @@ struct DocumentView: View {
     @Bindable var document: MarkDocument
     @Environment(\.undoManager) private var undoManager
     
-    @State private var parsedDocumentStore = ParsedDocumentStore()
+    @AppStorage(DefaultKeys.Editor.fontName) private var fontName = DefaultSettings.editorFontName
+    @AppStorage(DefaultKeys.Editor.fontSize) private var fontSize = DefaultSettings.editorFontSize
+    @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
+    
+    @AppStorage(DefaultKeys.Editor.interviewerBold) private var interviewerBold = DefaultSettings.editorInterviewerBold
+    
+    @State private var store = ParsedDocumentStore()
     @State private var UIState = DocumentUIState()
     @State private var editorState = EditorState()
     
@@ -38,8 +44,12 @@ struct DocumentView: View {
         
         TextEditorView(
             document: document,
-            store: parsedDocumentStore,
-            editorState: editorState
+            store: store,
+            editorState: editorState,
+            fontName: fontName,
+            fontSize: fontSize,
+            textWidth: textWidth,
+            interviewerBold: interviewerBold
         )
         
             // Document UI State
@@ -52,10 +62,7 @@ struct DocumentView: View {
         
             // Sheet
         .sheet(isPresented: $UIState.isSpeakerSheetPresented) {
-            SpeakerSheet(
-                speakers: parsedDocumentStore.speakers,
-                speakerData: document.meta.speakers
-            ) { newSpeakerData in
+            SpeakerSheet( speakers: store.speakers, speakerData: document.meta.speakers ) { newSpeakerData in
                 let oldSpeakerData = document.meta.speakers
                 guard oldSpeakerData != newSpeakerData else { return }
                 changeSpeakerData(from: oldSpeakerData, to: newSpeakerData)

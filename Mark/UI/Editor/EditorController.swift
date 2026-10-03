@@ -35,23 +35,24 @@ final class EditorController: NSObject, NSTextViewDelegate {
     private var textChange: TextChange?
     
     // Formatting
-    private var fontSize: Double
+    private var fontName = DefaultSettings.editorFontName
+    private var fontSize = DefaultSettings.editorFontSize
+    private var textWidth = DefaultSettings.editorTextWidth
     
-    private var regularFont: NSFont { NSFont.monospacedSystemFont(ofSize: self.fontSize, weight: .regular) }
-    private var boldFont: NSFont { NSFont.monospacedSystemFont(ofSize: self.fontSize, weight: .bold) }
+    private var interviewerBold = DefaultSettings.editorInterviewerBold
+    
+    private var regularFont: NSFont { makeFont(weight: .regular) }
+    private var boldFont: NSFont { makeFont(weight: .bold) }
     
     init(
         document: MarkDocument,
-        parsedDocumentStore: ParsedDocumentStore,
-        fontSize: Double
+        parsedDocumentStore: ParsedDocumentStore
     ) {
         self.document = document
         self.store = parsedDocumentStore
-        self.fontSize = fontSize
     }
     
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
-        
         let replacement = replacementString ?? ""
         let newRange = NSRange(location: affectedCharRange.location, length: replacement.utf16.count)
         
@@ -93,21 +94,54 @@ final class EditorController: NSObject, NSTextViewDelegate {
         reformatEntireDocument()
     }
     
-    func updateSettingsIfNeeded(fontSize: Double) {
-        if self.fontSize != fontSize {
-            self.fontSize = fontSize
-            reformatEntireDocument()
-        }
+    /// Updates the font settings and reformats the document if the new values differ from the current ones.
+    func updateSettingsIfNeeded(fontName: String, fontSize: Double, textWidth: Double, interviewerBold: Bool) {
+        let fontChanged = self.fontName != fontName || self.fontSize != fontSize
+        let widthChanged = self.textWidth != textWidth
+        let interviewerStyleChanged = self.interviewerBold != interviewerBold
+
+        guard fontChanged || widthChanged || interviewerStyleChanged else { return }
+
+        self.fontName = fontName
+        self.fontSize = fontSize
+        self.textWidth = textWidth
+        self.interviewerBold = interviewerBold
+
+        if widthChanged { updateTextWidth() }
+        if fontChanged || interviewerStyleChanged { reformatEntireDocument() }
     }
     
-    /// Configures the text view with the initial text and applies formatting.
-    /// - Parameter textView: The text view to configure.
-    func configure(_ textView: NSTextView) {
+    /// Configures the text view with the specified font and layout settings.
+    ///
+    /// This method sets up the internal state, assigns the text view's content from the document,
+    /// parses the text, and triggers an initial layout and reformatting pass.
+    func configure(
+        _ textView: NSTextView,
+        fontName: String,
+        fontSize: Double,
+        textWidth: Double,
+        interviewerBold: Bool
+    ) {
         self.textView = textView
-        
+
+        self.fontName = fontName
+        self.fontSize = fontSize
+        self.textWidth = textWidth
+        self.interviewerBold = interviewerBold
+
+        if let markTextView = textView as? MarkTextView {
+            markTextView.textWidth = textWidth
+
+            markTextView.onResize = { [weak self] in
+                self?.updateTextWidth()
+            }
+        }
+
         textView.string = document.text
+
         store.parse(document.text)
-        
+
+        updateTextWidth()
         reformatEntireDocument()
     }
     
@@ -150,7 +184,7 @@ private extension EditorController {
         let length = textStorage.length
         guard length > 0 else { return }
 
-        let range = TextRange(location: 0, length: textView.string.utf16.count)
+        let range = TextRange(location: 0, length: textStorage.length)
         guard range.length > 0 else { return }
 
         textStorage.beginEditing()
@@ -161,6 +195,25 @@ private extension EditorController {
 
         applySpeakersFormatting(to: textStorage, for: store.document.segments)
         applyEscapeFormatting(to: textStorage, range: range.nsRange)
+    }
+    
+    /// Updates the width of the text container to match the current text width,
+    /// constrained by the available width of the text view.
+    func updateTextWidth() {
+        guard let textView,
+              let textContainer = textView.textContainer,
+              textView.bounds.width > 0
+        else { return }
+        
+        let availableWidth = textView.bounds.width - textView.textContainerInset.width * 2
+        let width = min(textWidth, availableWidth)
+        
+        textContainer.containerSize = NSSize(
+            width: width,
+            height: .greatestFiniteMagnitude
+        )
+        
+        textContainer.widthTracksTextView = false
     }
     
     /// Updates formatting for only the segments that have changed.
@@ -230,9 +283,25 @@ private extension EditorController {
         
         for segment in segments {
             guard segment.range.intersects(range) else { continue }
-            let font = document.meta.speakers.isInterviewer(segment.speaker) ? boldFont : regularFont
+            let font = document.meta.speakers.isInterviewer(segment.speaker) && interviewerBold ? boldFont : regularFont
             textStorage.addAttribute(.font, value: font, range: segment.range.nsRange)
             textStorage.addAttribute(.font, value: boldFont, range: segment.speakerRange.nsRange)
         }
+    }
+
+    /// Creates a font with the specified weight.
+    /// - Parameter weight: The weight of the font to create.
+    /// - Returns: The configured `NSFont` instance.
+    private func makeFont(weight: NSFont.Weight) -> NSFont {
+        if fontName == DefaultSettings.editorFontName {
+            return NSFont.systemFont(ofSize: fontSize, weight: weight)
+        }
+
+        return NSFontManager.shared.font(
+            withFamily: fontName,
+            traits: weight == .bold ? .boldFontMask : [],
+            weight: weight == .bold ? 9 : 5,
+            size: fontSize
+        ) ?? NSFont.systemFont(ofSize: fontSize, weight: weight)
     }
 }

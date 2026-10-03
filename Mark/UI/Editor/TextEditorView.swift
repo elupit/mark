@@ -28,15 +28,21 @@ struct TextEditorView: NSViewRepresentable {
     let store: ParsedDocumentStore
     let editorState: EditorState
     
-    // Defaults
-    @AppStorage(DefaultKeys.Editor.fontSize) private var fontSize = 13.0
+    let fontName: String
+    let fontSize: Double
+    let textWidth: Double
+    
+    let interviewerBold: Bool
     
     let textInsets = NSSize(width: 30, height: 40)
     
     typealias NSViewType = NSScrollView
     
     func makeCoordinator() -> EditorController {
-        let controller = EditorController(document: document, parsedDocumentStore: store, fontSize: fontSize)
+        let controller = EditorController(
+            document: document,
+            parsedDocumentStore: store
+        )
         editorState.attach(controller)
         return controller
     }
@@ -60,7 +66,13 @@ struct TextEditorView: NSViewRepresentable {
         textView.importsGraphics = false
         textView.textContainerInset = textInsets
         
-        context.coordinator.configure(textView)
+        context.coordinator.configure(
+            textView,
+            fontName: fontName,
+            fontSize: fontSize,
+            textWidth: textWidth,
+            interviewerBold: interviewerBold
+        )
         textView.delegate = context.coordinator
         
         scrollView.documentView = textView
@@ -73,7 +85,7 @@ struct TextEditorView: NSViewRepresentable {
         else { return }
         
         textView.isEditable = !document.meta.isLocked
+        context.coordinator.updateSettingsIfNeeded(fontName: fontName, fontSize: fontSize, textWidth: textWidth, interviewerBold: interviewerBold)
         context.coordinator.updateTextIfNeeded(document.text, in: textView)
-        context.coordinator.updateSettingsIfNeeded(fontSize: fontSize)
     }
 }
