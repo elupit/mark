@@ -1,8 +1,8 @@
 //
-//  DefaultKeys.swift
+//  LineSpacing.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 02.10.2026.
+//  Created by Mikhail Korzh on 03.10.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,14 +19,28 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-enum DefaultKeys {
-    enum Editor {
-        static let fontName = "editor.fontName"
-        static let fontSize = "editor.fontSize"
-        static let lineSpacing = "editor.lineSpacing"
-        static let paragraphSpacing = "editor.paragraphSpacing"
-        static let textWidth = "editor.textWidth"
-        
-        static let interviewerBold = "editor.interviewerBold"
+import Foundation
+
+enum LineSpacing: String, CaseIterable, Identifiable {
+    case tight
+    case normal
+    case relaxed
+    
+    var id: Self { self }
+    
+    var multiplier: Double {
+        switch self {
+        case .tight: return 0
+        case .normal: return 0.5
+        case .relaxed: return 1.0
+        }
+    }
+    
+    var title: String {
+        switch self {
+        case .tight:return "Tight"
+        case .normal: return "Normal"
+        case .relaxed: return "Relaxed"
+        }
     }
 }

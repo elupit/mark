@@ -30,6 +30,8 @@ struct DocumentView: View {
     
     @AppStorage(DefaultKeys.Editor.fontName) private var fontName = DefaultSettings.editorFontName
     @AppStorage(DefaultKeys.Editor.fontSize) private var fontSize = DefaultSettings.editorFontSize
+    @AppStorage(DefaultKeys.Editor.lineSpacing) private var lineSpacing = DefaultSettings.editorLineSpacing
+    @AppStorage(DefaultKeys.Editor.paragraphSpacing) private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
     @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
     
     @AppStorage(DefaultKeys.Editor.interviewerBold) private var interviewerBold = DefaultSettings.editorInterviewerBold
@@ -48,6 +50,8 @@ struct DocumentView: View {
             editorState: editorState,
             fontName: fontName,
             fontSize: fontSize,
+            lineSpacing: lineSpacing,
+            paragraphSpacing: paragraphSpacing,
             textWidth: textWidth,
             interviewerBold: interviewerBold
         )

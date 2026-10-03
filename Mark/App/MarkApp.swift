@@ -36,6 +36,7 @@ import SwiftUI
     var body: some Scene {
         DocumentGroup { document in
             DocumentView(document: document)
+                .frame(minWidth: 500, minHeight: 200)
         } makeDocument: { configuration, context in
             MarkDocument()
         }

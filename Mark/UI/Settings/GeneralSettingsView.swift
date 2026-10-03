@@ -28,16 +28,15 @@ struct GeneralSettingsView: View {
     var body: some View {
         Form {
             Section("Reset Mark") {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(alignment: .firstTextBaseline) {
                         Text("Reset Settings")
-                        Text("Resets all settings to their default values.")
-                            .padding(.top, 1)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Reset") { showingResetConfirmation = true }
                     }
-                    Spacer()
-                    Button("Reset") { showingResetConfirmation = true }
+                    Text("Resets all Mark settings to their default values.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
         }
