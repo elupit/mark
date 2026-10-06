@@ -33,6 +33,7 @@ struct DocumentView: View {
     @AppStorage(DefaultKeys.Editor.lineSpacing) private var lineSpacing = DefaultSettings.editorLineSpacing
     @AppStorage(DefaultKeys.Editor.paragraphSpacing) private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
     @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
+    @AppStorage(DefaultKeys.Editor.justifyText) private var justifyText = DefaultSettings.editorJustifyText
     
     @AppStorage(DefaultKeys.Editor.interviewerBold) private var interviewerBold = DefaultSettings.editorInterviewerBold
     
@@ -53,10 +54,11 @@ struct DocumentView: View {
             lineSpacing: lineSpacing,
             paragraphSpacing: paragraphSpacing,
             textWidth: textWidth,
+            justifyText: justifyText,
             interviewerBold: interviewerBold
         )
         
-            // Document UI State
+        // Document UI State
         .focusedSceneValue(\.documentUIState, UIState)
         .onAppear {
             UIState.isLocked = document.meta.isLocked
@@ -64,7 +66,7 @@ struct DocumentView: View {
             UIState.export = { isExporting = true }
         }
         
-            // Sheet
+        // Sheet
         .sheet(isPresented: $UIState.isSpeakerSheetPresented) {
             SpeakerSheet( speakers: store.speakers, speakerData: document.meta.speakers ) { newSpeakerData in
                 let oldSpeakerData = document.meta.speakers
@@ -74,7 +76,7 @@ struct DocumentView: View {
             .frame(width: 500, height: 400)
         }
         
-            // Export
+        // Export
         .fileExporter(
             isPresented: $isExporting,
             document: MarkTextExport(text: document.text),

@@ -3,6 +3,10 @@
 > [!NOTE]
 > Mark is in pre-release development. Semantic versioning does not apply before version 1.0.0, so version numbers reflect development stages rather than stable public releases.
 
+## Mark 0.3.0 (unreleased)
+
+- Import `.docx` files
+
 ## Mark 0.2.0
 
 - Import and export plain text files

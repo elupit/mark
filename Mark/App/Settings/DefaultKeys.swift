@@ -26,6 +26,7 @@ enum DefaultKeys {
         static let lineSpacing = "editor.lineSpacing"
         static let paragraphSpacing = "editor.paragraphSpacing"
         static let textWidth = "editor.textWidth"
+        static let justifyText = "editor.justifyText"
         
         static let interviewerBold = "editor.interviewerBold"
     }

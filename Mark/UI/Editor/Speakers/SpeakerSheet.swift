@@ -69,6 +69,7 @@ struct SpeakerSheet: View {
                                 .help("Assign a role to this speaker.")
                             }
                         }
+                        .labelReservedIconWidth(20)
                     } header: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Speakers")

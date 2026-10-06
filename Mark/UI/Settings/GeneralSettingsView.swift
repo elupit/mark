@@ -24,12 +24,13 @@ import SwiftUI
 struct GeneralSettingsView: View {
     
     @State private var showingResetConfirmation = false
+    @State private var percentage = 0.5
     
     var body: some View {
         Form {
             Section("Reset Mark") {
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack(alignment: .firstTextBaseline) {
+                    HStack {
                         Text("Reset Settings")
                         Spacer()
                         Button("Reset") { showingResetConfirmation = true }
@@ -50,7 +51,8 @@ struct GeneralSettingsView: View {
     }
     
     func resetSettings() {
-        for key in DefaultSettings.defaults.keys {
+        for key in DefaultSettings.defaults.keys
+            where key.hasPrefix("editor.") {
             UserDefaults.standard.removeObject(forKey: key)
         }
     }

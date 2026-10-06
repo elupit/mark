@@ -22,11 +22,13 @@
 import Foundation
 
 /// Represents the metadata associated with a document.
-nonisolated struct Metadata: Codable, Sendable {
+nonisolated struct Metadata: Codable, Sendable, Equatable {
     /// The data store containing speaker information.
     var speakers = SpeakerDataStore()
     /// A boolean value indicating whether the `TextEditorView` content is locked for editing.
     var isLocked = false
+    /// Indicates whether the metadata is empty.
+    var isEmpty: Bool { self == Metadata() }
 }
 
 /// Defines the boundaries for the internal metadata block within a document.

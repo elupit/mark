@@ -30,10 +30,10 @@ struct TextEditorView: NSViewRepresentable {
     
     let fontName: String
     let fontSize: Double
-    let lineSpacing: LineSpacing
-    let paragraphSpacing: ParagraphSpacing
+    let lineSpacing: Double
+    let paragraphSpacing: Double
     let textWidth: Double
-    
+    let justifyText: Bool
     let interviewerBold: Bool
     
     let textInsets = NSSize(width: 84, height: 84) // Margins: 6 * default fontSize
@@ -75,6 +75,7 @@ struct TextEditorView: NSViewRepresentable {
             lineSpacing: lineSpacing,
             paragraphSpacing: paragraphSpacing,
             textWidth: textWidth,
+            justifyText: justifyText,
             interviewerBold: interviewerBold
         )
         textView.delegate = context.coordinator
@@ -96,6 +97,7 @@ struct TextEditorView: NSViewRepresentable {
             lineSpacing: lineSpacing,
             paragraphSpacing: paragraphSpacing,
             textWidth: textWidth,
+            justifyText: justifyText,
             interviewerBold:
                 interviewerBold
         )

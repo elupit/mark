@@ -40,6 +40,7 @@ final class EditorController: NSObject, NSTextViewDelegate {
     private var lineSpacing = DefaultSettings.editorLineSpacing
     private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
     private var textWidth = DefaultSettings.editorTextWidth
+    private var justifyText = DefaultSettings.editorJustifyText
     
     private var interviewerBold = DefaultSettings.editorInterviewerBold
     
@@ -48,8 +49,9 @@ final class EditorController: NSObject, NSTextViewDelegate {
     
     private var paragraphStyle: NSParagraphStyle {
         let style = NSMutableParagraphStyle()
-        style.lineSpacing = fontSize * lineSpacing.multiplier
-        style.paragraphSpacing = fontSize * paragraphSpacing.multiplier
+        style.lineSpacing = fontSize * (lineSpacing - 1)
+        style.paragraphSpacing = fontSize * paragraphSpacing
+        style.alignment = justifyText ? .justified : .natural
         return style
     }
     
@@ -107,18 +109,19 @@ final class EditorController: NSObject, NSTextViewDelegate {
     func updateSettingsIfNeeded(
         fontName: String,
         fontSize: Double,
-        lineSpacing: LineSpacing,
-        paragraphSpacing: ParagraphSpacing,
+        lineSpacing: Double,
+        paragraphSpacing: Double,
         textWidth: Double,
+        justifyText: Bool,
         interviewerBold: Bool
     ) {
         let fontChanged = self.fontName != fontName || self.fontSize != fontSize
-        let lineOrParagraphSpacingChanged = self.lineSpacing != lineSpacing || self.paragraphSpacing != paragraphSpacing
+        let paragraphStyleChanged = self.lineSpacing != lineSpacing || self.paragraphSpacing != paragraphSpacing || self.justifyText != justifyText
         let widthChanged = self.textWidth != textWidth
         let interviewerStyleChanged = self.interviewerBold != interviewerBold
 
         guard fontChanged
-                || lineOrParagraphSpacingChanged
+                || paragraphStyleChanged
                 || widthChanged
                 || interviewerStyleChanged
         else { return }
@@ -128,13 +131,14 @@ final class EditorController: NSObject, NSTextViewDelegate {
         self.lineSpacing = lineSpacing
         self.paragraphSpacing = paragraphSpacing
         self.textWidth = textWidth
+        self.justifyText = justifyText
         self.interviewerBold = interviewerBold
 
         if widthChanged {
             updateTextWidth()
         }
 
-        if fontChanged || interviewerStyleChanged || lineOrParagraphSpacingChanged {
+        if fontChanged || interviewerStyleChanged || paragraphStyleChanged {
             reformatEntireDocument()
         }
     }
@@ -147,9 +151,10 @@ final class EditorController: NSObject, NSTextViewDelegate {
         _ textView: NSTextView,
         fontName: String,
         fontSize: Double,
-        lineSpacing: LineSpacing,
-        paragraphSpacing: ParagraphSpacing,
+        lineSpacing: Double,
+        paragraphSpacing: Double,
         textWidth: Double,
+        justifyText: Bool,
         interviewerBold: Bool
     ) {
         self.textView = textView

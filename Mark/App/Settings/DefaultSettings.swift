@@ -23,18 +23,22 @@ enum DefaultSettings {
     // Editor
     static let editorFontName = "System"
     static let editorFontSize = 14.0
-    static let editorLineSpacing: LineSpacing = .normal
-    static let editorParagraphSpacing: ParagraphSpacing = .oneLine
+    static let editorLineSpacing = 1.2
+    static let editorParagraphSpacing = 1.0
     static let editorTextWidth = 600.0
+    static let editorJustifyText = false
     static let editorInterviewerBold = true
     
     static let defaults: [String: Any] = [
         // Editor
         DefaultKeys.Editor.fontName: editorFontName,
         DefaultKeys.Editor.fontSize: editorFontSize,
-        DefaultKeys.Editor.lineSpacing: editorLineSpacing.rawValue,
-        DefaultKeys.Editor.paragraphSpacing: editorParagraphSpacing.rawValue,
+        DefaultKeys.Editor.lineSpacing: editorLineSpacing,
+        DefaultKeys.Editor.paragraphSpacing: editorParagraphSpacing,
+        DefaultKeys.Editor.justifyText: editorJustifyText,
         DefaultKeys.Editor.textWidth: editorTextWidth,
         DefaultKeys.Editor.interviewerBold: editorInterviewerBold
     ]
+    
+    
 }

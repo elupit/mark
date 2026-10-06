@@ -25,7 +25,7 @@ import UniformTypeIdentifiers
 @Observable
 final class MarkDocument: Document {
     
-    static let readableContentTypes: [UTType] = [.mark, .plainText]
+    static let readableContentTypes: [UTType] = [.mark, .plainText, UTType("org.openxmlformats.wordprocessingml.document")!]
     static let writableContentTypes: [UTType] = [.mark]
     
     var text: String
@@ -38,11 +38,21 @@ final class MarkDocument: Document {
     
     nonisolated func reader(configuration: sending ReadConfiguration) ->
     sending FileWrapperDocumentReader<MarkSnapshot> {
-        FileWrapperDocumentReader(configuration) { fileWrapper in
+        let contentType = configuration.contentType
+
+        return FileWrapperDocumentReader(configuration) { fileWrapper in
             
             guard let data = fileWrapper.regularFileContents
-                    else {
-                throw CocoaError(.fileReadCorruptFile)
+            else { throw CocoaError(.fileReadCorruptFile) }
+            
+            if contentType == UTType("org.openxmlformats.wordprocessingml.document")! {
+                let attributedString = try NSAttributedString(
+                    data: data,
+                    options: [.documentType: NSAttributedString.DocumentType.officeOpenXML],
+                    documentAttributes: nil
+                )
+
+                return MarkSnapshot(text: attributedString.string, meta: Metadata())
             }
             
             let string = String(decoding: data, as: UTF8.self)
@@ -119,7 +129,8 @@ nonisolated extension MarkDocument {
 
         guard
             let data = try? encoder.encode(snapshot.meta),
-            let json = String(data: data, encoding: .utf8)
+            let json = String(data: data, encoding: .utf8),
+            !snapshot.meta.isEmpty
         else {
             return Data(snapshot.text.utf8)
         }

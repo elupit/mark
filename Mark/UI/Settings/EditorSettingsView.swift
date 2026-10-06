@@ -24,28 +24,22 @@ import AppKit
 
 struct EditorSettingsView: View {
 
-    @AppStorage(DefaultKeys.Editor.fontName)        private var fontName        = DefaultSettings.editorFontName
-    @AppStorage(DefaultKeys.Editor.fontSize)        private var fontSize        = DefaultSettings.editorFontSize
-    @AppStorage(DefaultKeys.Editor.lineSpacing)
-    private var lineSpacingRaw = DefaultSettings.editorLineSpacing.rawValue
-    @AppStorage(DefaultKeys.Editor.paragraphSpacing)
-    private var paragraphSpacingRaw = DefaultSettings.editorParagraphSpacing.rawValue
-    @AppStorage(DefaultKeys.Editor.textWidth)       private var textWidth       = DefaultSettings.editorTextWidth
+    @AppStorage(DefaultKeys.Editor.fontName) private var fontName = DefaultSettings.editorFontName
+    @AppStorage(DefaultKeys.Editor.fontSize) private var fontSize = DefaultSettings.editorFontSize
+    @AppStorage(DefaultKeys.Editor.justifyText) private var justifyText = DefaultSettings.editorJustifyText
     
     @AppStorage(DefaultKeys.Editor.interviewerBold) private var interviewerBold = DefaultSettings.editorInterviewerBold
     
     @State private var fontPicker = FontPicker()
     @State private var showFontWarning = false
+    @State private var showCustomizeLayout = false
     @State private var unsupportedFontName = ""
-    
-    private var lineSpacing: LineSpacing { LineSpacing(rawValue: lineSpacingRaw) ?? .normal }
-    private var paragraphSpacing: ParagraphSpacing { ParagraphSpacing(rawValue: paragraphSpacingRaw) ?? .oneLine }
 
     var body: some View {
         Form {
             Section("Typography") {
                 // Font
-                HStack(alignment: .firstTextBaseline) {
+                HStack {
                     Text("Font")
                     Spacer()
                     Button(fontName) { showFontPanel() }
@@ -65,40 +59,12 @@ struct EditorSettingsView: View {
                         .labelsHidden()
                 }
                 
-                // Line spacing
-                Picker("Line Spacing", selection: $lineSpacingRaw) {
-                    ForEach(LineSpacing.allCases) { spacing in
-                        Text(spacing.title).tag(spacing.rawValue)
-                    }
-                }
+                Toggle("Justify Text", isOn: $justifyText)
                 
-                // Paragraph spacing
-                Picker("Paragraph Spacing", selection: $paragraphSpacingRaw) {
-                    ForEach(ParagraphSpacing.allCases) { spacing in
-                        Text(spacing.title).tag(spacing.rawValue)
-                    }
-                }
-            }
-            
-            Section {
-                // Text width
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Text Column Width")
+                HStack {
+                    Text("Customize Layout")
                     Spacer()
-                    HStack(spacing: 2) {
-                        Text("\(Int(textWidth))")
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                            .frame(width: 50, alignment: .trailing)
-
-                        Text("pt")
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                    }
-                        .accessibilityLabel("\(Int(textWidth)) points")
-
-                    Stepper("", value: $textWidth, in: 200...1500, step: 50)
-                        .labelsHidden()
+                    Button("Customize…") { showCustomizeLayout = true }
                 }
             }
             
@@ -114,6 +80,10 @@ struct EditorSettingsView: View {
         } message: {
             Text("\(unsupportedFontName) does not provide both regular and bold styles. " +
                  "Mark requires both styles for speaker formatting.")
+        }
+        
+        .sheet(isPresented: $showCustomizeLayout) {
+            CustomizeLayoutView()
         }
     }
     
@@ -137,6 +107,86 @@ struct EditorSettingsView: View {
     }
 }
 
+struct CustomizeLayoutView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    @AppStorage(DefaultKeys.Editor.lineSpacing) private var lineSpacing = DefaultSettings.editorLineSpacing
+    @AppStorage(DefaultKeys.Editor.paragraphSpacing) private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
+    @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Form {
+                Section("Customize Layout") {
+                    HStack {
+                        Text("Line Spacing")
+                        Spacer()
+                        Slider(
+                            value: $lineSpacing,
+                            in: 0.8...2.0,
+                            step: 0.1,
+                            label: { Text("Line Spacing") }
+                        )
+                        .labelsHidden()
+                        .frame(width: 200)
+                        Text(lineSpacing.formatted(.number.precision(.fractionLength(2))))
+                            .frame(width: 40, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    
+                    HStack {
+                        Text("Paragraph Spacing")
+                        Spacer()
+                        Slider(
+                            value: $paragraphSpacing,
+                            in: 0...3,
+                            step: 0.25,
+                            label: { Text("Paragraph Spacing") }
+                        )
+                        .labelsHidden()
+                        .frame(width: 200)
+                        Text(paragraphSpacing.formatted(.number.precision(.fractionLength(2))))
+                            .frame(width: 40, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                    
+                    HStack {
+                        Text("Text Column Width")
+                        Spacer()
+                        Slider(
+                            value: $textWidth,
+                            in: 300...1500,
+                            step: 100,
+                            label: { Text("Text Column Width") }
+                        )
+                        .labelsHidden()
+                        .frame(width: 200)
+                        Text(textWidth.formatted())
+                            .frame(width: 40, alignment: .trailing)
+                            .foregroundStyle(.secondary)
+                            .monospacedDigit()
+                    }
+                }
+            }
+            .formStyle(.grouped)
+        }
+        Divider()
+
+        HStack {
+            Spacer()
+            Button("Done") { dismiss() }
+            .keyboardShortcut(.defaultAction)
+        }
+        .padding()
+    }
+}
+
 #Preview {
     EditorSettingsView()
+}
+
+#Preview {
+    CustomizeLayoutView()
 }
