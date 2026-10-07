@@ -30,8 +30,8 @@ struct TextEditorView: NSViewRepresentable {
     
     let fontName: String
     let fontSize: Double
-    let lineSpacing: Double
-    let paragraphSpacing: Double
+    let lineSpacing: LineSpacing
+    let paragraphSpacing: ParagraphSpacing
     let textWidth: Double
     let justifyText: Bool
     let interviewerBold: Bool

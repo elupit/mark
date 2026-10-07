@@ -26,18 +26,26 @@ struct EditorSettingsView: View {
 
     @AppStorage(DefaultKeys.Editor.fontName) private var fontName = DefaultSettings.editorFontName
     @AppStorage(DefaultKeys.Editor.fontSize) private var fontSize = DefaultSettings.editorFontSize
+    @AppStorage(DefaultKeys.Editor.lineSpacing) private var lineSpacingRaw = DefaultSettings.editorLineSpacing.rawValue
+    @AppStorage(DefaultKeys.Editor.paragraphSpacing) private var paragraphSpacingRaw = DefaultSettings.editorParagraphSpacing.rawValue
+    @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
     @AppStorage(DefaultKeys.Editor.justifyText) private var justifyText = DefaultSettings.editorJustifyText
-    
     @AppStorage(DefaultKeys.Editor.interviewerBold) private var interviewerBold = DefaultSettings.editorInterviewerBold
+    
+    private var lineSpacing: LineSpacing { LineSpacing(rawValue: lineSpacingRaw) ?? .normal }
+    private var paragraphSpacing: ParagraphSpacing { ParagraphSpacing(rawValue: paragraphSpacingRaw) ?? .normal }
     
     @State private var fontPicker = FontPicker()
     @State private var showFontWarning = false
-    @State private var showCustomizeLayout = false
     @State private var unsupportedFontName = ""
 
     var body: some View {
         Form {
+            
+            // MARK: - Typography
+            
             Section("Typography") {
+                
                 // Font
                 HStack {
                     Text("Font")
@@ -59,16 +67,40 @@ struct EditorSettingsView: View {
                         .labelsHidden()
                 }
                 
-                Toggle("Justify Text", isOn: $justifyText)
-                
-                HStack {
-                    Text("Customize Layout")
-                    Spacer()
-                    Button("Customize…") { showCustomizeLayout = true }
+                // Line Spacing
+                Picker("Line Spacing", selection: $lineSpacingRaw) {
+                    ForEach(LineSpacing.allCases) { spacing in
+                        Text(spacing.title).tag(spacing.rawValue)
+                    }
                 }
+                
+                // Paragraph Spacing
+                Picker("Paragraph Spacing", selection: $paragraphSpacingRaw) {
+                    ForEach(ParagraphSpacing.allCases) { spacing in
+                        Text(spacing.title).tag(spacing.rawValue)
+                    }
+                }
+                
+                // Text Width
+                Slider(value: $textWidth, in: 200...1400) {
+                    Text("Text Width")
+                } currentValueLabel: {
+                    Text("\(textWidth)%")
+                } ticks: {
+                    SliderTick(200) { Text("Small") }
+                    SliderTick(600) { Text("Default") }
+                    SliderTick(1400) { Text("Large") }
+                }
+                
+                // Justify Text
+                Toggle("Justify Text", isOn: $justifyText)
+
             }
             
+            // MARK: - Speaker Formatting
+            
             Section("Speaker Formatting") {
+                
                 // Interviewer text
                 Toggle("Bold Interviewer Text", isOn: $interviewerBold)
             }
@@ -80,10 +112,6 @@ struct EditorSettingsView: View {
         } message: {
             Text("\(unsupportedFontName) does not provide both regular and bold styles. " +
                  "Mark requires both styles for speaker formatting.")
-        }
-        
-        .sheet(isPresented: $showCustomizeLayout) {
-            CustomizeLayoutView()
         }
     }
     
@@ -107,86 +135,6 @@ struct EditorSettingsView: View {
     }
 }
 
-struct CustomizeLayoutView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    @AppStorage(DefaultKeys.Editor.lineSpacing) private var lineSpacing = DefaultSettings.editorLineSpacing
-    @AppStorage(DefaultKeys.Editor.paragraphSpacing) private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
-    @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Form {
-                Section("Customize Layout") {
-                    HStack {
-                        Text("Line Spacing")
-                        Spacer()
-                        Slider(
-                            value: $lineSpacing,
-                            in: 0.8...2.0,
-                            step: 0.1,
-                            label: { Text("Line Spacing") }
-                        )
-                        .labelsHidden()
-                        .frame(width: 200)
-                        Text(lineSpacing.formatted(.number.precision(.fractionLength(2))))
-                            .frame(width: 40, alignment: .trailing)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                    
-                    HStack {
-                        Text("Paragraph Spacing")
-                        Spacer()
-                        Slider(
-                            value: $paragraphSpacing,
-                            in: 0...3,
-                            step: 0.25,
-                            label: { Text("Paragraph Spacing") }
-                        )
-                        .labelsHidden()
-                        .frame(width: 200)
-                        Text(paragraphSpacing.formatted(.number.precision(.fractionLength(2))))
-                            .frame(width: 40, alignment: .trailing)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                    
-                    HStack {
-                        Text("Text Column Width")
-                        Spacer()
-                        Slider(
-                            value: $textWidth,
-                            in: 300...1500,
-                            step: 100,
-                            label: { Text("Text Column Width") }
-                        )
-                        .labelsHidden()
-                        .frame(width: 200)
-                        Text(textWidth.formatted())
-                            .frame(width: 40, alignment: .trailing)
-                            .foregroundStyle(.secondary)
-                            .monospacedDigit()
-                    }
-                }
-            }
-            .formStyle(.grouped)
-        }
-        Divider()
-
-        HStack {
-            Spacer()
-            Button("Done") { dismiss() }
-            .keyboardShortcut(.defaultAction)
-        }
-        .padding()
-    }
-}
-
 #Preview {
     EditorSettingsView()
-}
-
-#Preview {
-    CustomizeLayoutView()
 }

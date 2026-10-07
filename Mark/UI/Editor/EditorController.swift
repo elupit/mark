@@ -49,8 +49,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
     
     private var paragraphStyle: NSParagraphStyle {
         let style = NSMutableParagraphStyle()
-        style.lineSpacing = fontSize * (lineSpacing - 1)
-        style.paragraphSpacing = fontSize * paragraphSpacing
+        style.lineSpacing = fontSize * lineSpacing.multiplier
+        style.paragraphSpacing = fontSize * paragraphSpacing.multiplier
         style.alignment = justifyText ? .justified : .natural
         return style
     }
@@ -109,8 +109,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
     func updateSettingsIfNeeded(
         fontName: String,
         fontSize: Double,
-        lineSpacing: Double,
-        paragraphSpacing: Double,
+        lineSpacing: LineSpacing,
+        paragraphSpacing: ParagraphSpacing,
         textWidth: Double,
         justifyText: Bool,
         interviewerBold: Bool
@@ -151,8 +151,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
         _ textView: NSTextView,
         fontName: String,
         fontSize: Double,
-        lineSpacing: Double,
-        paragraphSpacing: Double,
+        lineSpacing: LineSpacing,
+        paragraphSpacing: ParagraphSpacing,
         textWidth: Double,
         justifyText: Bool,
         interviewerBold: Bool
