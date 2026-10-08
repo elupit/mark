@@ -1,8 +1,8 @@
 //
-//  DefaultKeys.swift
+//  SettingRow.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 02.10.2026.
+//  Created by Mikhail Korzh on 08.10.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,17 +19,28 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-enum DefaultKeys {
-    enum Editor {
-        static let fontName = "editor.fontName"
-        static let fontSize = "editor.fontSize"
-        static let lineSpacing = "editor.lineSpacing"
-        static let paragraphSpacing = "editor.paragraphSpacing"
-        static let textWidth = "editor.textWidth"
-        static let justifyText = "editor.justifyText"
-        static let automaticSymbolBalancing = "editor.automaticSymbolBalancing"
-        static let wrapSelection = "editor.wrapSelection"
-        
-        static let interviewerBold = "editor.interviewerBold"
+import SwiftUI
+
+struct SettingRow<Content: View>: View {
+    let caption: String
+    let content: Content
+
+    init(
+        caption: String,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.caption = caption
+        self.content = content()
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content
+
+            Text(caption)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.top, 3)
+        }
     }
 }

@@ -6,6 +6,7 @@
 ## Mark 0.3.0 (unreleased)
 
 - Import `.docx` files
+- Automaticallty insert the matching closing brackets or wrap selected text in typed brackets
 
 ## Mark 0.2.0
 

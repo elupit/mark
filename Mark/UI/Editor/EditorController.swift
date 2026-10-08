@@ -41,11 +41,25 @@ final class EditorController: NSObject, NSTextViewDelegate {
     private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
     private var textWidth = DefaultSettings.editorTextWidth
     private var justifyText = DefaultSettings.editorJustifyText
-    
     private var interviewerBold = DefaultSettings.editorInterviewerBold
+    private var automaticSymbolBalancing = DefaultSettings.editorAutomaticSymbolBalancing
+    private var wrapSelection = DefaultSettings.editorWrapSelection
+    
+    private var isCompletingInput = false
     
     private var regularFont: NSFont { makeFont(weight: .regular) }
     private var boldFont: NSFont { makeFont(weight: .bold) }
+    
+    enum SymbolPairs {
+        static let opening: [String: String] = [
+            "(": ")",
+            "[": "]",
+            "{": "}",
+            "<": ">"
+        ]
+        
+        static let closing: Set<String> = Set(opening.values)
+    }
     
     private var paragraphStyle: NSParagraphStyle {
         let style = NSMutableParagraphStyle()
@@ -64,13 +78,23 @@ final class EditorController: NSObject, NSTextViewDelegate {
     }
     
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
-        let replacement = replacementString ?? ""
-        let newRange = NSRange(location: affectedCharRange.location, length: replacement.utf16.count)
+        guard let replacementString else { return true }
         
-        textChange = TextChange(
-            oldRange: TextRange(location: affectedCharRange.location, length: affectedCharRange.length),
-            newRange: TextRange(location: newRange.location, length: newRange.length)
-        )
+        if !isCompletingInput {
+            if affectedCharRange.length > 0,
+               wrapSelection,
+               wrapSelection(in: textView, range: affectedCharRange, symbol: replacementString) {
+                return false
+            }
+            
+            if affectedCharRange.length == 0,
+               automaticSymbolBalancing,
+               balanceSymbol(in: textView, location: affectedCharRange.location, symbol: replacementString) {
+                return false
+            }
+        }
+        
+        setTextChange(oldRange: affectedCharRange, newLength: replacementString.utf16.count)
         
         return true
     }
@@ -113,17 +137,21 @@ final class EditorController: NSObject, NSTextViewDelegate {
         paragraphSpacing: ParagraphSpacing,
         textWidth: Double,
         justifyText: Bool,
-        interviewerBold: Bool
+        interviewerBold: Bool,
+        automaticSymbolBalancing: Bool,
+        wrapSelection: Bool
     ) {
         let fontChanged = self.fontName != fontName || self.fontSize != fontSize
         let paragraphStyleChanged = self.lineSpacing != lineSpacing || self.paragraphSpacing != paragraphSpacing || self.justifyText != justifyText
         let widthChanged = self.textWidth != textWidth
         let interviewerStyleChanged = self.interviewerBold != interviewerBold
+        let completeChanged = self.automaticSymbolBalancing != automaticSymbolBalancing || self.wrapSelection != wrapSelection
 
         guard fontChanged
                 || paragraphStyleChanged
                 || widthChanged
                 || interviewerStyleChanged
+                || completeChanged
         else { return }
 
         self.fontName = fontName
@@ -133,6 +161,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
         self.textWidth = textWidth
         self.justifyText = justifyText
         self.interviewerBold = interviewerBold
+        self.automaticSymbolBalancing = automaticSymbolBalancing
+        self.wrapSelection = wrapSelection
 
         if widthChanged {
             updateTextWidth()
@@ -155,7 +185,9 @@ final class EditorController: NSObject, NSTextViewDelegate {
         paragraphSpacing: ParagraphSpacing,
         textWidth: Double,
         justifyText: Bool,
-        interviewerBold: Bool
+        interviewerBold: Bool,
+        automaticSymbolBalancing: Bool,
+        wrapSelection: Bool
     ) {
         self.textView = textView
 
@@ -165,6 +197,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
         self.paragraphSpacing = paragraphSpacing
         self.textWidth = textWidth
         self.interviewerBold = interviewerBold
+        self.automaticSymbolBalancing = automaticSymbolBalancing
+        self.wrapSelection = wrapSelection
 
         if let markTextView = textView as? MarkTextView {
             markTextView.textWidth = textWidth
@@ -216,20 +250,20 @@ private extension EditorController {
     func reformatEntireDocument() {
         guard let textView = self.textView,
               let textStorage = textView.textStorage
-        else { return }
-
+                else { return }
+        
         let length = textStorage.length
         guard length > 0 else { return }
-
+        
         let range = TextRange(location: 0, length: textStorage.length)
         guard range.length > 0 else { return }
-
+        
         textStorage.beginEditing()
         defer { textStorage.endEditing() }
-
+        
         textStorage.removeAttribute(.font, range: range.nsRange)
         textStorage.addAttributes([.font: regularFont, .paragraphStyle: paragraphStyle], range: range.nsRange)
-
+        
         applySpeakersFormatting(to: textStorage, for: store.document.segments)
         applyEscapeFormatting(to: textStorage, range: range.nsRange)
     }
@@ -240,7 +274,7 @@ private extension EditorController {
         guard let textView,
               let textContainer = textView.textContainer,
               textView.bounds.width > 0
-        else { return }
+                else { return }
         
         let availableWidth = textView.bounds.width - textView.textContainerInset.width * 2
         let width = min(textWidth, availableWidth)
@@ -262,14 +296,14 @@ private extension EditorController {
     func applyIncrementalFormatting(in result: ParseResult) {
         guard let textView = self.textView,
               let textStorage = textView.textStorage
-        else { return }
+                else { return }
         
         textStorage.beginEditing()
         defer { textStorage.endEditing() }
         
         textStorage.removeAttribute(.font, range: result.affectedRange.nsRange)
         textStorage.addAttributes([.font: regularFont, .paragraphStyle: paragraphStyle], range: result.affectedRange.nsRange)
-
+        
         applySpeakersFormatting(to: textStorage, for: result.newSegments)
         if let range = result.newSegments.range {
             applyEscapeFormatting(to: textStorage, range: range.nsRange)
@@ -291,11 +325,11 @@ private extension EditorController {
         let text = textStorage.string as NSString
         let end = range.location + range.length - 1
         guard end > range.location else { return }
-
+        
         for index in range.location..<end {
             if text.character(at: index) == 92,
                text.character(at: index + 1) == 58 {
-
+                
                 textStorage.addAttribute(
                     .foregroundColor,
                     value: NSColor.tertiaryLabelColor,
@@ -325,7 +359,7 @@ private extension EditorController {
             textStorage.addAttribute(.font, value: boldFont, range: segment.speakerRange.nsRange)
         }
     }
-
+    
     /// Creates a font with the specified weight.
     /// - Parameter weight: The weight of the font to create.
     /// - Returns: The configured `NSFont` instance.
@@ -333,12 +367,73 @@ private extension EditorController {
         if fontName == DefaultSettings.editorFontName {
             return NSFont.systemFont(ofSize: fontSize, weight: weight)
         }
-
+        
         return NSFontManager.shared.font(
             withFamily: fontName,
             traits: weight == .bold ? .boldFontMask : [],
             weight: weight == .bold ? 9 : 5,
             size: fontSize
         ) ?? NSFont.systemFont(ofSize: fontSize, weight: weight)
+    }
+    
+    /// Records a text change by updating the `textChange` property with the old and new ranges.
+    private func setTextChange(oldRange: NSRange, newLength: Int) {
+        textChange = TextChange(
+            oldRange: TextRange(location: oldRange.location, length: oldRange.length),
+            newRange: TextRange(location: oldRange.location, length: newLength)
+        )
+    }
+    
+    /// Wraps the currently selected text in a specified symbol and its corresponding closing symbol.
+    private func wrapSelection(in textView: NSTextView, range: NSRange, symbol: String) -> Bool {
+        guard let closing = SymbolPairs.opening[symbol] else { return false }
+        
+        let selectedText = (textView.string as NSString).substring(with: range)
+        let replacement = symbol + selectedText + closing
+        
+        textChange = TextChange(
+            oldRange: TextRange(location: range.location, length: range.length),
+            newRange: TextRange(location: range.location, length: replacement.utf16.count)
+        )
+        
+        isCompletingInput = true
+        textView.insertText(replacement, replacementRange: range)
+        isCompletingInput = false
+        
+        textView.setSelectedRange(NSRange(location: range.location + replacement.utf16.count, length: 0))
+        
+        return true
+    }
+    
+    /// Balances a typed symbol by either skipping over an existing closing symbol or inserting a matching closing symbol.
+    private func balanceSymbol(in textView: NSTextView, location: Int, symbol: String) -> Bool {
+        if SymbolPairs.closing.contains(symbol) {
+            if location < textView.string.utf16.count {
+                let next = (textView.string as NSString).substring(with: NSRange(location: location, length: 1))
+                
+                if next == symbol {
+                    textView.setSelectedRange(NSRange(location: location + 1, length: 0))
+                    return true
+                }
+            }
+            
+            return false
+        }
+        
+        guard let closing = SymbolPairs.opening[symbol] else { return false }
+        let replacement = symbol + closing
+        
+        textChange = TextChange(
+            oldRange: TextRange(location: location, length: 0),
+            newRange: TextRange(location: location, length: replacement.utf16.count)
+        )
+        
+        isCompletingInput = true
+        textView.insertText(replacement, replacementRange: NSRange(location: location, length: 0))
+        isCompletingInput = false
+        
+        textView.setSelectedRange(NSRange(location: location + symbol.utf16.count, length: 0))
+        
+        return true
     }
 }

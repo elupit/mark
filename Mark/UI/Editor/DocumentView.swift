@@ -37,6 +37,9 @@ struct DocumentView: View {
     
     @AppStorage(DefaultKeys.Editor.interviewerBold) private var interviewerBold = DefaultSettings.editorInterviewerBold
     
+    @AppStorage(DefaultKeys.Editor.automaticSymbolBalancing) private var automaticSymbolBalancing = DefaultSettings.editorAutomaticSymbolBalancing
+    @AppStorage(DefaultKeys.Editor.wrapSelection) private var wrapSelection = DefaultSettings.editorWrapSelection
+    
     @State private var store = ParsedDocumentStore()
     @State private var UIState = DocumentUIState()
     @State private var editorState = EditorState()
@@ -55,7 +58,9 @@ struct DocumentView: View {
             paragraphSpacing: paragraphSpacing,
             textWidth: textWidth,
             justifyText: justifyText,
-            interviewerBold: interviewerBold
+            interviewerBold: interviewerBold,
+            automaticSymbolBalancing: automaticSymbolBalancing,
+            wrapSelection: wrapSelection
         )
         
         // Document UI State

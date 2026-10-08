@@ -28,8 +28,11 @@ enum DefaultSettings {
     static let editorTextWidth = 600.0
     static let editorJustifyText = false
     static let editorInterviewerBold = true
+    static let editorAutomaticSymbolBalancing = true
+    static let editorWrapSelection = true
     
     static let defaults: [String: Any] = [
+        
         // Editor
         DefaultKeys.Editor.fontName: editorFontName,
         DefaultKeys.Editor.fontSize: editorFontSize,
@@ -37,7 +40,9 @@ enum DefaultSettings {
         DefaultKeys.Editor.paragraphSpacing: editorParagraphSpacing.rawValue,
         DefaultKeys.Editor.justifyText: editorJustifyText,
         DefaultKeys.Editor.textWidth: editorTextWidth,
-        DefaultKeys.Editor.interviewerBold: editorInterviewerBold
+        DefaultKeys.Editor.interviewerBold: editorInterviewerBold,
+        DefaultKeys.Editor.automaticSymbolBalancing: editorAutomaticSymbolBalancing,
+        DefaultKeys.Editor.wrapSelection: editorWrapSelection
     ]
     
     

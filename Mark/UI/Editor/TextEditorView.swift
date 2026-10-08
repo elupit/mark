@@ -35,6 +35,8 @@ struct TextEditorView: NSViewRepresentable {
     let textWidth: Double
     let justifyText: Bool
     let interviewerBold: Bool
+    let automaticSymbolBalancing: Bool
+    let wrapSelection: Bool
     
     let textInsets = NSSize(width: 84, height: 84) // Margins: 6 * default fontSize
         
@@ -76,7 +78,9 @@ struct TextEditorView: NSViewRepresentable {
             paragraphSpacing: paragraphSpacing,
             textWidth: textWidth,
             justifyText: justifyText,
-            interviewerBold: interviewerBold
+            interviewerBold: interviewerBold,
+            automaticSymbolBalancing: automaticSymbolBalancing,
+            wrapSelection: wrapSelection
         )
         textView.delegate = context.coordinator
         
@@ -99,7 +103,9 @@ struct TextEditorView: NSViewRepresentable {
             textWidth: textWidth,
             justifyText: justifyText,
             interviewerBold:
-                interviewerBold
+                interviewerBold,
+            automaticSymbolBalancing: automaticSymbolBalancing,
+            wrapSelection: wrapSelection
         )
         
         context.coordinator.updateTextIfNeeded(

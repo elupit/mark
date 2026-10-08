@@ -23,14 +23,23 @@ import SwiftUI
 import AppKit
 
 struct EditorSettingsView: View {
+    
+    // MARK: - Settings
 
+    // Typography
     @AppStorage(DefaultKeys.Editor.fontName) private var fontName = DefaultSettings.editorFontName
     @AppStorage(DefaultKeys.Editor.fontSize) private var fontSize = DefaultSettings.editorFontSize
     @AppStorage(DefaultKeys.Editor.lineSpacing) private var lineSpacingRaw = DefaultSettings.editorLineSpacing.rawValue
     @AppStorage(DefaultKeys.Editor.paragraphSpacing) private var paragraphSpacingRaw = DefaultSettings.editorParagraphSpacing.rawValue
     @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
     @AppStorage(DefaultKeys.Editor.justifyText) private var justifyText = DefaultSettings.editorJustifyText
+    
+    // Interview
     @AppStorage(DefaultKeys.Editor.interviewerBold) private var interviewerBold = DefaultSettings.editorInterviewerBold
+    
+    // Completions
+    @AppStorage(DefaultKeys.Editor.automaticSymbolBalancing) private var automaticSymbolBalancing = DefaultSettings.editorAutomaticSymbolBalancing
+    @AppStorage(DefaultKeys.Editor.wrapSelection) private var wrapSelection = DefaultSettings.editorWrapSelection
     
     private var lineSpacing: LineSpacing { LineSpacing(rawValue: lineSpacingRaw) ?? .normal }
     private var paragraphSpacing: ParagraphSpacing { ParagraphSpacing(rawValue: paragraphSpacingRaw) ?? .normal }
@@ -38,72 +47,14 @@ struct EditorSettingsView: View {
     @State private var fontPicker = FontPicker()
     @State private var showFontWarning = false
     @State private var unsupportedFontName = ""
+    
+    // MARK: - Body
 
     var body: some View {
         Form {
-            
-            // MARK: - Typography
-            
-            Section("Typography") {
-                
-                // Font
-                HStack {
-                    Text("Font")
-                    Spacer()
-                    Button(fontName) { showFontPanel() }
-                        .accessibilityLabel("Font Name")
-                    HStack(spacing: 2) {
-                        Text("\(Int(fontSize))")
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                            .frame(width: 20, alignment: .trailing)
-                        
-                        Text("pt")
-                            .foregroundStyle(.secondary)
-                            .accessibilityHidden(true)
-                    }
-                    .accessibilityLabel("\(Int(fontSize)) points")
-                    Stepper("Font Size", value: $fontSize, in: 10...28, step: 1 )
-                        .labelsHidden()
-                }
-                
-                // Line Spacing
-                Picker("Line Spacing", selection: $lineSpacingRaw) {
-                    ForEach(LineSpacing.allCases) { spacing in
-                        Text(spacing.title).tag(spacing.rawValue)
-                    }
-                }
-                
-                // Paragraph Spacing
-                Picker("Paragraph Spacing", selection: $paragraphSpacingRaw) {
-                    ForEach(ParagraphSpacing.allCases) { spacing in
-                        Text(spacing.title).tag(spacing.rawValue)
-                    }
-                }
-                
-                // Text Width
-                Slider(value: $textWidth, in: 200...1400) {
-                    Text("Text Width")
-                } currentValueLabel: {
-                    Text("\(textWidth)%")
-                } ticks: {
-                    SliderTick(200) { Text("Small") }
-                    SliderTick(600) { Text("Default") }
-                    SliderTick(1400) { Text("Large") }
-                }
-                
-                // Justify Text
-                Toggle("Justify Text", isOn: $justifyText)
-
-            }
-            
-            // MARK: - Speaker Formatting
-            
-            Section("Speaker Formatting") {
-                
-                // Interviewer text
-                Toggle("Bold Interviewer Text", isOn: $interviewerBold)
-            }
+            typographySection
+            interview
+            completions
         }
         .formStyle(.grouped)
         
@@ -114,6 +65,98 @@ struct EditorSettingsView: View {
                  "Mark requires both styles for speaker formatting.")
         }
     }
+    
+    // MARK: - Sections
+    
+    private var typographySection: some View {
+        Section("Typography") {
+            
+            // Font
+            fontRow
+            
+            // Line Spacing
+            Picker("Line Spacing", selection: $lineSpacingRaw) {
+                ForEach(LineSpacing.allCases) { spacing in
+                    Text(spacing.title).tag(spacing.rawValue)
+                }
+            }
+            
+            // Paragraph Spacing
+            Picker("Paragraph Spacing", selection: $paragraphSpacingRaw) {
+                ForEach(ParagraphSpacing.allCases) { spacing in
+                    Text(spacing.title).tag(spacing.rawValue)
+                }
+            }
+            
+            // Text Width
+            textWidthRow
+            
+            // Justify Text
+            Toggle("Justify Text", isOn: $justifyText)
+
+        }
+    }
+    
+    private var interview: some View {
+        Section("Interview") {
+            
+            // Interviewer text
+            Toggle("Bold Interviewer Text", isOn: $interviewerBold)
+        }
+    }
+    
+    private var completions: some View {
+        Section("Completions") {
+            
+            // Automatic Symbol Balancing
+            SettingRow(caption: "Automaticallty insert the matching closing brackets.") {
+                Toggle("Complete Brackets", isOn: $automaticSymbolBalancing)
+            }
+            
+            // Wrap Selection
+            SettingRow(caption: "Wrap selected text in typed brackets.") {
+                Toggle("Wrap Selection", isOn: $wrapSelection)
+            }
+        }
+    }
+    
+    // MARK: - Rows
+    
+    private var fontRow: some View {
+        HStack {
+            Text("Font")
+            Spacer()
+            Button(fontName) { showFontPanel() }
+                .accessibilityLabel("Font Name")
+            HStack(spacing: 2) {
+                Text("\(Int(fontSize))")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .frame(width: 20, alignment: .trailing)
+                
+                Text("pt")
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+            }
+            .accessibilityLabel("\(Int(fontSize)) points")
+            Stepper("Font Size", value: $fontSize, in: 10...28, step: 1 )
+                .labelsHidden()
+        }
+    }
+    
+    private var textWidthRow: some View {
+        Slider(value: $textWidth, in: 200...1400) {
+            Text("Text Width")
+        } currentValueLabel: {
+            Text("\(textWidth)%")
+        } ticks: {
+            SliderTick(200) { Text("Small") }
+            SliderTick(600) { Text("Default") }
+            SliderTick(1400) { Text("Large") }
+        }
+    }
+    
+    // MARK: - Font
     
     private func showFontPanel() {
         fontPicker.onSelect = { name in
