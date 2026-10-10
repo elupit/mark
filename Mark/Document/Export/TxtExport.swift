@@ -1,8 +1,8 @@
 //
-//  DefaultKeys.swift
+//  TxtExport.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 02.10.2026.
+//  Created by Mikhail Korzh on 26.09.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,18 +19,21 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-enum DefaultKeys {
-    enum Editor {
-        static let fontName = "editor.fontName"
-        static let fontSize = "editor.fontSize"
-        static let lineSpacing = "editor.lineSpacing"
-        static let paragraphSpacing = "editor.paragraphSpacing"
-        static let highlightColor = "editor.highlightColor"
-        static let textWidth = "editor.textWidth"
-        static let justifyText = "editor.justifyText"
-        static let automaticSymbolBalancing = "editor.automaticSymbolBalancing"
-        static let wrapSelection = "editor.wrapSelection"
-        
-        static let interviewerBold = "editor.interviewerBold"
+import SwiftUI
+import UniformTypeIdentifiers
+
+@MainActor
+final class TxtExport: WritableDocument {
+    static let writableContentTypes: [UTType] = [.plainText]
+
+    let text: String
+    init(text: String) { self.text = text }
+
+    nonisolated func writer( configuration: sending WriteConfiguration) -> sending FileWrapperDocumentWriter<String> {
+        FileWrapperDocumentWriter(configuration) { snapshot, _ in
+            FileWrapper(regularFileWithContents: Data(snapshot.utf8))
+        }
     }
+    
+    func snapshot(contentType: UTType) async throws -> sending String { text }
 }

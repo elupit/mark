@@ -32,6 +32,7 @@ struct TextEditorView: NSViewRepresentable {
     let fontSize: Double
     let lineSpacing: LineSpacing
     let paragraphSpacing: ParagraphSpacing
+    let highlightColor: HighlightColor
     let textWidth: Double
     let justifyText: Bool
     let interviewerBold: Bool
@@ -76,6 +77,7 @@ struct TextEditorView: NSViewRepresentable {
             fontSize: fontSize,
             lineSpacing: lineSpacing,
             paragraphSpacing: paragraphSpacing,
+            highlightColor: highlightColor,
             textWidth: textWidth,
             justifyText: justifyText,
             interviewerBold: interviewerBold,
@@ -100,6 +102,7 @@ struct TextEditorView: NSViewRepresentable {
             fontSize: fontSize,
             lineSpacing: lineSpacing,
             paragraphSpacing: paragraphSpacing,
+            highlightColor: highlightColor,
             textWidth: textWidth,
             justifyText: justifyText,
             interviewerBold:

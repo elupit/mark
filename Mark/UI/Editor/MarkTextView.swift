@@ -23,6 +23,7 @@ import AppKit
 
 final class MarkTextView: NSTextView {
     
+    var editorController: EditorController?
     var onResize: (() -> Void)?
     var textWidth: CGFloat = DefaultSettings.editorTextWidth {
         didSet { needsLayout = true }
@@ -42,6 +43,15 @@ final class MarkTextView: NSTextView {
         let offset = max(0, (availableWidth - containerWidth) / 2)
 
         return NSPoint(x: textContainerInset.width + offset, y: super.textContainerOrigin.y)
+    }
+    
+    override func menu(for event: NSEvent) -> NSMenu? {
+        guard let menu = super.menu(for: event) else { return nil }
+        
+        // Remove Font item from Menu
+        menu.items.filter{ $0.title == "Font" }.forEach(menu.removeItem)
+        
+        return menu
     }
 
     override func changeFont(_ sender: Any?) { }

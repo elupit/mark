@@ -32,6 +32,7 @@ struct DocumentView: View {
     @AppStorage(DefaultKeys.Editor.fontSize) private var fontSize = DefaultSettings.editorFontSize
     @AppStorage(DefaultKeys.Editor.lineSpacing) private var lineSpacing = DefaultSettings.editorLineSpacing
     @AppStorage(DefaultKeys.Editor.paragraphSpacing) private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
+    @AppStorage(DefaultKeys.Editor.highlightColor) private var highlightColor = DefaultSettings.editorHighlightColor
     @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
     @AppStorage(DefaultKeys.Editor.justifyText) private var justifyText = DefaultSettings.editorJustifyText
     
@@ -56,6 +57,7 @@ struct DocumentView: View {
             fontSize: fontSize,
             lineSpacing: lineSpacing,
             paragraphSpacing: paragraphSpacing,
+            highlightColor: highlightColor,
             textWidth: textWidth,
             justifyText: justifyText,
             interviewerBold: interviewerBold,
@@ -69,6 +71,7 @@ struct DocumentView: View {
             UIState.isLocked = document.meta.isLocked
             UIState.toggleLock = { changeLock( from: document.meta.isLocked, to: !document.meta.isLocked ) }
             UIState.export = { isExporting = true }
+            UIState.highlight = { editorState.controller?.highlightSelection() }
         }
         
         // Sheet
@@ -84,7 +87,7 @@ struct DocumentView: View {
         // Export
         .fileExporter(
             isPresented: $isExporting,
-            document: MarkTextExport(text: document.text),
+            document: TxtExport(text: document.text),
             contentType: .plainText,
             defaultFilename: "Untitled"
         ) { _ in }

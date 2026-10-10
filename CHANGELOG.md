@@ -7,6 +7,7 @@
 
 - Import `.docx` files
 - Automaticallty insert the matching closing brackets or wrap selected text in typed brackets
+- Highlight text
 
 ## Mark 0.2.0
 

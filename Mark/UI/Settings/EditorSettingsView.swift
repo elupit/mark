@@ -31,6 +31,9 @@ struct EditorSettingsView: View {
     @AppStorage(DefaultKeys.Editor.fontSize) private var fontSize = DefaultSettings.editorFontSize
     @AppStorage(DefaultKeys.Editor.lineSpacing) private var lineSpacingRaw = DefaultSettings.editorLineSpacing.rawValue
     @AppStorage(DefaultKeys.Editor.paragraphSpacing) private var paragraphSpacingRaw = DefaultSettings.editorParagraphSpacing.rawValue
+    
+    @AppStorage(DefaultKeys.Editor.highlightColor) private var highlightColorRaw = DefaultSettings.editorHighlightColor.rawValue
+    
     @AppStorage(DefaultKeys.Editor.textWidth) private var textWidth = DefaultSettings.editorTextWidth
     @AppStorage(DefaultKeys.Editor.justifyText) private var justifyText = DefaultSettings.editorJustifyText
     
@@ -43,6 +46,7 @@ struct EditorSettingsView: View {
     
     private var lineSpacing: LineSpacing { LineSpacing(rawValue: lineSpacingRaw) ?? .normal }
     private var paragraphSpacing: ParagraphSpacing { ParagraphSpacing(rawValue: paragraphSpacingRaw) ?? .normal }
+    private var highlightColor: HighlightColor { HighlightColor(rawValue: highlightColorRaw) ?? .yellow }
     
     @State private var fontPicker = FontPicker()
     @State private var showFontWarning = false
@@ -52,9 +56,14 @@ struct EditorSettingsView: View {
 
     var body: some View {
         Form {
+            // Typography
             typographySection
-            interview
-            completions
+            highlightSection
+            layoutSection
+            // Interview
+            interviewSection
+            // Completions
+            completionsSection
         }
         .formStyle(.grouped)
         
@@ -87,17 +96,24 @@ struct EditorSettingsView: View {
                     Text(spacing.title).tag(spacing.rawValue)
                 }
             }
-            
+        }
+    }
+    
+    private var highlightSection: some View {
+        HighlightColorPicker(title: "Highlight Color", selection: $highlightColorRaw)
+    }
+    
+    private var layoutSection: some View {
+        Section {
             // Text Width
             textWidthRow
             
             // Justify Text
             Toggle("Justify Text", isOn: $justifyText)
-
         }
     }
     
-    private var interview: some View {
+    private var interviewSection: some View {
         Section("Interview") {
             
             // Interviewer text
@@ -105,7 +121,7 @@ struct EditorSettingsView: View {
         }
     }
     
-    private var completions: some View {
+    private var completionsSection: some View {
         Section("Completions") {
             
             // Automatic Symbol Balancing

@@ -27,6 +27,8 @@ nonisolated struct Metadata: Codable, Sendable, Equatable {
     var speakers = SpeakerDataStore()
     /// A boolean value indicating whether the `TextEditorView` content is locked for editing.
     var isLocked = false
+    /// Highlightet text containers
+    var highlights: [Highlight] = []
     /// Indicates whether the metadata is empty.
     var isEmpty: Bool { self == Metadata() }
 }

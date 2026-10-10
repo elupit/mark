@@ -39,6 +39,7 @@ final class EditorController: NSObject, NSTextViewDelegate {
     private var fontSize = DefaultSettings.editorFontSize
     private var lineSpacing = DefaultSettings.editorLineSpacing
     private var paragraphSpacing = DefaultSettings.editorParagraphSpacing
+    private var highlightColor = DefaultSettings.editorHighlightColor
     private var textWidth = DefaultSettings.editorTextWidth
     private var justifyText = DefaultSettings.editorJustifyText
     private var interviewerBold = DefaultSettings.editorInterviewerBold
@@ -46,6 +47,7 @@ final class EditorController: NSObject, NSTextViewDelegate {
     private var wrapSelection = DefaultSettings.editorWrapSelection
     
     private var isCompletingInput = false
+    private var isUndoGroupOpen = false
     
     private var regularFont: NSFont { makeFont(weight: .regular) }
     private var boldFont: NSFont { makeFont(weight: .bold) }
@@ -69,6 +71,8 @@ final class EditorController: NSObject, NSTextViewDelegate {
         return style
     }
     
+    // MARK: - Main
+    
     init(
         document: MarkDocument,
         parsedDocumentStore: ParsedDocumentStore
@@ -79,7 +83,7 @@ final class EditorController: NSObject, NSTextViewDelegate {
     
     func textView(_ textView: NSTextView, shouldChangeTextIn affectedCharRange: NSRange, replacementString: String?) -> Bool {
         guard let replacementString else { return true }
-        
+                
         if !isCompletingInput {
             if affectedCharRange.length > 0,
                wrapSelection,
@@ -94,6 +98,13 @@ final class EditorController: NSObject, NSTextViewDelegate {
             }
         }
         
+        if !(textView.undoManager?.isUndoing ?? false),
+           !(textView.undoManager?.isRedoing ?? false),
+           !isUndoGroupOpen {
+            textView.undoManager?.beginUndoGrouping()
+            isUndoGroupOpen = true
+        }
+            
         setTextChange(oldRange: affectedCharRange, newLength: replacementString.utf16.count)
         
         return true
@@ -102,11 +113,21 @@ final class EditorController: NSObject, NSTextViewDelegate {
     /// Updates the text and its parsed structure after an edit.
     func textDidChange(_ notification: Notification) {
         guard let textView = notification.object as? NSTextView else { return }
+        
+        let isUndoing = textView.undoManager?.isUndoing ?? false
+        let isRedoing = textView.undoManager?.isRedoing ?? false
 
         document.text = textView.string
 
         if let textChange {
+            if !isUndoing && !isRedoing {
+                let oldHighlights = document.meta.highlights
+                updateHighlights(for: textChange)
+                registerHighlightUndo(old: oldHighlights)
+            }
+
             let result = store.update(document.text, on: textChange)
+
             applyIncrementalFormatting(in: result)
         } else {
             store.parse(document.text)
@@ -114,6 +135,61 @@ final class EditorController: NSObject, NSTextViewDelegate {
         }
 
         self.textChange = nil
+
+        if isUndoGroupOpen,
+           !isUndoing,
+           !isRedoing {
+            textView.undoManager?.endUndoGrouping()
+            isUndoGroupOpen = false
+        }
+    }
+    
+    // MARK: - Configuration
+    
+    /// Configures the text view with the specified font and layout settings.
+    ///
+    /// This method sets up the internal state, assigns the text view's content from the document,
+    /// parses the text, and triggers an initial layout and reformatting pass.
+    func configure(
+        _ textView: NSTextView,
+        fontName: String,
+        fontSize: Double,
+        lineSpacing: LineSpacing,
+        paragraphSpacing: ParagraphSpacing,
+        highlightColor: HighlightColor,
+        textWidth: Double,
+        justifyText: Bool,
+        interviewerBold: Bool,
+        automaticSymbolBalancing: Bool,
+        wrapSelection: Bool
+    ) {
+        self.textView = textView
+
+        self.fontName = fontName
+        self.fontSize = fontSize
+        self.lineSpacing = lineSpacing
+        self.paragraphSpacing = paragraphSpacing
+        self.highlightColor = highlightColor
+        self.textWidth = textWidth
+        self.interviewerBold = interviewerBold
+        self.automaticSymbolBalancing = automaticSymbolBalancing
+        self.wrapSelection = wrapSelection
+
+        if let markTextView = textView as? MarkTextView {
+            markTextView.textWidth = textWidth
+            markTextView.editorController = self
+
+            markTextView.onResize = { [weak self] in
+                self?.updateTextWidth()
+            }
+        }
+
+        textView.string = document.text
+
+        store.parse(document.text)
+
+        updateTextWidth()
+        reformatEntireDocument()
     }
     
     /// Updates the text view if the new text is different from the current text.
@@ -135,6 +211,7 @@ final class EditorController: NSObject, NSTextViewDelegate {
         fontSize: Double,
         lineSpacing: LineSpacing,
         paragraphSpacing: ParagraphSpacing,
+        highlightColor: HighlightColor,
         textWidth: Double,
         justifyText: Bool,
         interviewerBold: Bool,
@@ -146,18 +223,21 @@ final class EditorController: NSObject, NSTextViewDelegate {
         let widthChanged = self.textWidth != textWidth
         let interviewerStyleChanged = self.interviewerBold != interviewerBold
         let completeChanged = self.automaticSymbolBalancing != automaticSymbolBalancing || self.wrapSelection != wrapSelection
+        let highlightChanged = self.highlightColor != highlightColor
 
         guard fontChanged
                 || paragraphStyleChanged
                 || widthChanged
                 || interviewerStyleChanged
                 || completeChanged
+                || highlightChanged
         else { return }
 
         self.fontName = fontName
         self.fontSize = fontSize
         self.lineSpacing = lineSpacing
         self.paragraphSpacing = paragraphSpacing
+        self.highlightColor = highlightColor
         self.textWidth = textWidth
         self.justifyText = justifyText
         self.interviewerBold = interviewerBold
@@ -168,52 +248,9 @@ final class EditorController: NSObject, NSTextViewDelegate {
             updateTextWidth()
         }
 
-        if fontChanged || interviewerStyleChanged || paragraphStyleChanged {
+        if fontChanged || interviewerStyleChanged || paragraphStyleChanged || highlightChanged {
             reformatEntireDocument()
         }
-    }
-    
-    /// Configures the text view with the specified font and layout settings.
-    ///
-    /// This method sets up the internal state, assigns the text view's content from the document,
-    /// parses the text, and triggers an initial layout and reformatting pass.
-    func configure(
-        _ textView: NSTextView,
-        fontName: String,
-        fontSize: Double,
-        lineSpacing: LineSpacing,
-        paragraphSpacing: ParagraphSpacing,
-        textWidth: Double,
-        justifyText: Bool,
-        interviewerBold: Bool,
-        automaticSymbolBalancing: Bool,
-        wrapSelection: Bool
-    ) {
-        self.textView = textView
-
-        self.fontName = fontName
-        self.fontSize = fontSize
-        self.lineSpacing = lineSpacing
-        self.paragraphSpacing = paragraphSpacing
-        self.textWidth = textWidth
-        self.interviewerBold = interviewerBold
-        self.automaticSymbolBalancing = automaticSymbolBalancing
-        self.wrapSelection = wrapSelection
-
-        if let markTextView = textView as? MarkTextView {
-            markTextView.textWidth = textWidth
-
-            markTextView.onResize = { [weak self] in
-                self?.updateTextWidth()
-            }
-        }
-
-        textView.string = document.text
-
-        store.parse(document.text)
-
-        updateTextWidth()
-        reformatEntireDocument()
     }
     
     /// Updates text formatting for segments whose speaker roles have changed.
@@ -237,9 +274,78 @@ final class EditorController: NSObject, NSTextViewDelegate {
 
         applySpeakersFormatting(to: textStorage, for: segments)
     }
+    
+    // MARK: - Actions
+    
+    /// Highlights the currently selected text in the text view.
+    ///
+    /// This method checks if there is a valid selection and, if so, adds a new highlight
+    /// to the document's metadata and applies the highlight formatting to the text storage.
+    func highlightSelection() {
+        guard let textView, let textStorage = textView.textStorage else { return }
+        let selectedRange = textView.selectedRange()
+        guard selectedRange.length > 0 else { return }
+        
+        let oldHighlights = document.meta.highlights
+        var newRange = TextRange(location: selectedRange.location, length: selectedRange.length)
+        
+        var updatedHighlights: [Highlight] = []
+        var handled = false
+        
+        for highlight in oldHighlights {
+            let existingRange = highlight.range
+            
+            // Exact same range - remove highlight
+            if existingRange == newRange {
+                handled = true
+                continue
+            }
+            
+            // Within highlighted range (or on bounds) — split or trim
+            if newRange.location >= existingRange.location && newRange.upperBound <= existingRange.upperBound {
+                
+                let leftLength = newRange.location - existingRange.location
+                if leftLength > 0 {
+                    let leftRange = TextRange(location: existingRange.location, length: leftLength)
+                    updatedHighlights.append(Highlight(leftRange))
+                }
+                
+                let rightLocation = newRange.upperBound
+                let rightLength = existingRange.upperBound - rightLocation
+                if rightLength > 0 {
+                    let rightRange = TextRange(location: rightLocation, length: rightLength)
+                    updatedHighlights.append(Highlight(rightRange))
+                }
+                
+                handled = true
+                continue
+            }
+            
+            // Covers both highlighted and not — merge (or partial overlap)
+            if newRange.intersects(existingRange) || newRange.isAdjacent(to: existingRange) {
+                let minLocation = min(existingRange.location, newRange.location)
+                let maxLocation = max(NSMaxRange(existingRange.nsRange), NSMaxRange(newRange.nsRange))
+                let mergedRange = TextRange(location: minLocation, length: maxLocation - minLocation)
+                
+                // We will merge this into our newRange and continue checking against others
+                newRange = mergedRange
+                continue
+            }
+            
+            // No overlap, keep existing highlight
+            updatedHighlights.append(highlight)
+        }
+        
+        // Not highlighted text (or merged result) — add highlight
+        if !handled { updatedHighlights.append(Highlight(newRange)) }
+        
+        document.meta.highlights = updatedHighlights
+        registerHighlightUndo(old: oldHighlights)
+        applyHighlightFormatting(to: textStorage, range: selectedRange)
+    }
 }
 
-// MARK: - Formatting
+// MARK: - Private
 
 private extension EditorController {
     
@@ -258,6 +364,9 @@ private extension EditorController {
         let range = TextRange(location: 0, length: textStorage.length)
         guard range.length > 0 else { return }
         
+        textView.undoManager?.disableUndoRegistration()
+        defer { textView.undoManager?.enableUndoRegistration() }
+        
         textStorage.beginEditing()
         defer { textStorage.endEditing() }
         
@@ -266,6 +375,34 @@ private extension EditorController {
         
         applySpeakersFormatting(to: textStorage, for: store.document.segments)
         applyEscapeFormatting(to: textStorage, range: range.nsRange)
+        applyHighlightFormatting(to: textStorage, range: range.nsRange)
+    }
+    
+    /// Updates formatting for only the segments that have changed.
+    ///
+    /// This method clears the font attributes for old segments and applies updated
+    /// speaker and escape formatting to the new segments within the text storage.
+    ///
+    /// - Parameter result: A `ParseResult` object containing the old and new segments to process.
+    func applyIncrementalFormatting(in result: ParseResult) {
+        guard let textView = self.textView,
+              let textStorage = textView.textStorage
+                else { return }
+        
+        textView.undoManager?.disableUndoRegistration()
+        defer { textView.undoManager?.enableUndoRegistration() }
+        
+        textStorage.beginEditing()
+        defer { textStorage.endEditing() }
+        
+        textStorage.removeAttribute(.font, range: result.affectedRange.nsRange)
+        textStorage.addAttributes([.font: regularFont, .paragraphStyle: paragraphStyle], range: result.affectedRange.nsRange)
+        
+        applySpeakersFormatting(to: textStorage, for: result.newSegments)
+        if let range = result.newSegments.range {
+            applyEscapeFormatting(to: textStorage, range: range.nsRange)
+            applyHighlightFormatting(to: textStorage, range: range.nsRange)
+        }
     }
     
     /// Updates the width of the text container to match the current text width,
@@ -285,29 +422,6 @@ private extension EditorController {
         )
         
         textContainer.widthTracksTextView = false
-    }
-    
-    /// Updates formatting for only the segments that have changed.
-    ///
-    /// This method clears the font attributes for old segments and applies updated
-    /// speaker and escape formatting to the new segments within the text storage.
-    ///
-    /// - Parameter result: A `ParseResult` object containing the old and new segments to process.
-    func applyIncrementalFormatting(in result: ParseResult) {
-        guard let textView = self.textView,
-              let textStorage = textView.textStorage
-                else { return }
-        
-        textStorage.beginEditing()
-        defer { textStorage.endEditing() }
-        
-        textStorage.removeAttribute(.font, range: result.affectedRange.nsRange)
-        textStorage.addAttributes([.font: regularFont, .paragraphStyle: paragraphStyle], range: result.affectedRange.nsRange)
-        
-        applySpeakersFormatting(to: textStorage, for: result.newSegments)
-        if let range = result.newSegments.range {
-            applyEscapeFormatting(to: textStorage, range: range.nsRange)
-        }
     }
     
     // Formatting helpers
@@ -357,6 +471,79 @@ private extension EditorController {
             let font = document.meta.speakers.isInterviewer(segment.speaker) && interviewerBold ? boldFont : regularFont
             textStorage.addAttribute(.font, value: font, range: segment.range.nsRange)
             textStorage.addAttribute(.font, value: boldFont, range: segment.speakerRange.nsRange)
+        }
+    }
+    
+    /// Applies a background highlight to the ranges specified in the document's metadata.
+    ///
+    /// This method iterates through all highlights associated with the document and adds a
+    /// `.backgroundColor` attribute to the text storage for each valid range.
+    private func applyHighlightFormatting(to textStorage: NSTextStorage, range: NSRange) {
+        removeHighlightFormatting(from: textStorage, range: range)
+        
+        for highlight in document.meta.highlights {
+            let highlightRange = NSRange(
+                location: highlight.range.location,
+                length: highlight.range.length
+            )
+
+            guard NSMaxRange(highlightRange) <= textStorage.length else { continue }
+            let intersection = NSIntersectionRange(range, highlightRange)
+            guard intersection.length > 0 else { continue }
+
+            textStorage.addAttribute(
+                .markHighlight,
+                value: true,
+                range: intersection
+            )
+
+            textStorage.addAttribute(
+                .backgroundColor,
+                value: highlightColor.color,
+                range: intersection
+            )
+        }
+    }
+    
+    /// Updates the ranges of document highlights in response to a text change.
+    ///
+    /// This method iterates through the existing highlights and adjusts their ranges based on the
+    /// old and new ranges of the text change. Highlights that are completely removed or fall
+    /// within a deleted range are removed.
+    private func updateHighlights(for change: TextChange) {
+        let oldRange = change.oldRange
+        let newRange = change.newRange
+        let delta = newRange.length - oldRange.length
+
+        for index in document.meta.highlights.indices.reversed() {
+            let range = document.meta.highlights[index].range
+
+            if oldRange.location >= range.upperBound { continue }
+            if oldRange.upperBound <= range.location {
+                document.meta.highlights[index].range = range.shifted(by: delta)
+                continue
+            }
+
+            if oldRange.location <= range.location && oldRange.upperBound >= range.upperBound {
+                if newRange.isEmpty { document.meta.highlights.remove(at: index) }
+                else { document.meta.highlights[index].range = newRange }
+                continue
+            }
+
+            if oldRange.location >= range.location &&
+                oldRange.upperBound <= range.upperBound {
+                document.meta.highlights[index].range = TextRange(location: range.location, length: range.length + delta)
+                continue
+            }
+
+            let newEnd = range.upperBound + delta
+            let newLength = newEnd - range.location
+
+            if newLength > 0 {
+                document.meta.highlights[index].range = TextRange(location: range.location, length: newLength)
+            } else {
+                document.meta.highlights.remove(at: index)
+            }
         }
     }
     
@@ -435,5 +622,36 @@ private extension EditorController {
         textView.setSelectedRange(NSRange(location: location + symbol.utf16.count, length: 0))
         
         return true
+    }
+    
+    /// Removes highlight formatting from the specified range in the text storage.
+    private func removeHighlightFormatting(from textStorage: NSTextStorage, range: NSRange) {
+        textStorage.removeAttribute(.markHighlight, range: range)
+        textStorage.removeAttribute(.backgroundColor, range: range)
+    }
+    
+    /// Registers an undo action for highlight changes in the document.
+    ///
+    /// This method captures the current state of highlights and registers an undo operation
+    /// that restores the old highlights, reformats the document, and recursively registers
+    /// a redo action.
+    private func registerHighlightUndo(old: [Highlight]) {
+        guard let undoManager = textView?.undoManager else { return }
+
+        let new = document.meta.highlights
+
+        undoManager.registerUndo(withTarget: self) { controller in
+            controller.document.meta.highlights = old
+
+            if let textView = controller.textView,
+               let textStorage = textView.textStorage {
+                controller.applyHighlightFormatting(
+                    to: textStorage,
+                    range: NSRange(location: 0, length: textStorage.length)
+                )
+            }
+
+            controller.registerHighlightUndo(old: new)
+        }
     }
 }

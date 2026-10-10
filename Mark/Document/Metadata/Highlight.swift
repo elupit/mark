@@ -1,8 +1,8 @@
 //
-//  MarkTextExport.swift
+//  Highlight.swift
 //  Mark
 //
-//  Created by Mikhail Korzh on 26.09.2026.
+//  Created by Mikhail Korzh on 08.10.2026.
 //  Copyright © 2026 Mikhail Korzh.
 //
 //  This program is free software: you can redistribute it and/or modify
@@ -19,21 +19,20 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
-import SwiftUI
-import UniformTypeIdentifiers
+import Foundation
 
-@MainActor
-final class MarkTextExport: WritableDocument {
-    static let writableContentTypes: [UTType] = [.plainText]
+struct Highlight: Codable, Sendable, Identifiable, Equatable {
+    let id: UUID
+    var range: TextRange
+    var comment: String?
 
-    let text: String
-    init(text: String) { self.text = text }
-
-    nonisolated func writer( configuration: sending WriteConfiguration) -> sending FileWrapperDocumentWriter<String> {
-        FileWrapperDocumentWriter(configuration) { snapshot, _ in
-            FileWrapper(regularFileWithContents: Data(snapshot.utf8))
-        }
+    init(_ range: TextRange, comment: String? = nil) {
+        self.id = UUID()
+        self.range = range
+        self.comment = comment
     }
-    
-    func snapshot(contentType: UTType) async throws -> sending String { text }
+
+    nonisolated static func == (lhs: Highlight, rhs: Highlight) -> Bool {
+        lhs.id == rhs.id
+    }
 }

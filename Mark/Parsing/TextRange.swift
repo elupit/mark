@@ -26,7 +26,7 @@
 import Foundation
 
 /// A UTF-16 range inside the document.
-nonisolated struct TextRange: Sendable, Equatable {
+nonisolated struct TextRange: Codable, Sendable, Equatable {
     
     let location: Int
     let length: Int
@@ -70,6 +70,11 @@ nonisolated struct TextRange: Sendable, Equatable {
         let end = max(upperBound, other.upperBound)
 
         return TextRange(location: start, length: end - start)
+    }
+    
+    /// Whether this range is directly adjacent to another range (no characters between them).
+    func isAdjacent(to other: TextRange) -> Bool {
+        return self.upperBound == other.location || other.upperBound == self.location
     }
     
     static let zero = TextRange(location: 0, length: 0)

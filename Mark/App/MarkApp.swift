@@ -44,40 +44,38 @@ import SwiftUI
         // Commands
         .commands {
             CommandGroup(replacing: CommandGroupPlacement.appInfo) {
-                Button {
-                    openWindow(id: "about")
-                } label: {
-                    Text("About Mark")
-                }
+                Button { openWindow(id: "about") }
+                label: { Text("About Mark") }
             }
     
             CommandGroup(after: .importExport) {
                 
-                Button("Export as Plain Text…") {
-                    documentUIState?.export?()
-                }
+                Button("Export as Plain Text…") { documentUIState?.export?() }
                 .disabled(documentUIState == nil)
                 
                 Divider()
                 
-                Button {
-                    documentUIState?.toggleLock?()
-                } label: {
-                    Label(
-                        documentUIState?.isLocked == true ? "Unlock Document" : "Lock Document",
-                        systemImage: documentUIState?.isLocked == true ? "lock.open" : "lock"
-                    )
-                }
+                Button { documentUIState?.toggleLock?() }
+                label: { Label(
+                    documentUIState?.isLocked == true ? "Unlock Document" : "Lock Document",
+                    systemImage: documentUIState?.isLocked == true ? "lock.open" : "lock"
+                ) }
                 .labelStyle(.titleAndIcon)
                 .disabled(documentUIState == nil)
             }
             
+            CommandMenu("Format") {
+                Button { documentUIState?.highlight?() }
+                label: { Label("Highlight", systemImage: "highlighter") }
+                .labelStyle(.titleAndIcon)
+                .disabled(documentUIState == nil)
+                .keyboardShortcut("h", modifiers: [.shift, .command])
+            }
+
+            
             CommandMenu("Interview") {
-                Button {
-                    documentUIState?.isSpeakerSheetPresented = true
-                } label: {
-                    Label("Speakers", systemImage: "person.2")
-                }
+                Button { documentUIState?.isSpeakerSheetPresented = true }
+                label: { Label("Speakers", systemImage: "person.2") }
                 .labelStyle(.titleAndIcon)
                 .disabled(documentUIState == nil)
             }

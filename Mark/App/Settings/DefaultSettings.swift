@@ -25,6 +25,7 @@ enum DefaultSettings {
     static let editorFontSize = 14.0
     static let editorLineSpacing: LineSpacing = .normal
     static let editorParagraphSpacing: ParagraphSpacing = .normal
+    static let editorHighlightColor: HighlightColor = .yellow
     static let editorTextWidth = 600.0
     static let editorJustifyText = false
     static let editorInterviewerBold = true
@@ -38,6 +39,7 @@ enum DefaultSettings {
         DefaultKeys.Editor.fontSize: editorFontSize,
         DefaultKeys.Editor.lineSpacing: editorLineSpacing.rawValue,
         DefaultKeys.Editor.paragraphSpacing: editorParagraphSpacing.rawValue,
+        DefaultKeys.Editor.highlightColor: editorHighlightColor.rawValue,
         DefaultKeys.Editor.justifyText: editorJustifyText,
         DefaultKeys.Editor.textWidth: editorTextWidth,
         DefaultKeys.Editor.interviewerBold: editorInterviewerBold,
