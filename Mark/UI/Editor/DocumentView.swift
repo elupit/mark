@@ -72,6 +72,9 @@ struct DocumentView: View {
             UIState.toggleLock = { changeLock( from: document.meta.isLocked, to: !document.meta.isLocked ) }
             UIState.export = { isExporting = true }
             UIState.highlight = { editorState.controller?.highlightSelection() }
+            UIState.comment = {
+                editorState.controller?.textView?.addComment(nil)
+            }
         }
         
         // Sheet

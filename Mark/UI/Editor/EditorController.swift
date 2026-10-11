@@ -22,6 +22,26 @@
 //  along with this program. If not, see <https://www.gnu.org/licenses/>.
 //
 
+/*
+ 
+ Almost all of the code below is a bit of a mess, mixing good ideas
+ related to coordinating the TextView with formatting functions and other
+ text-related features that should be separated into their own structures
+ and files. Frankly, this is far from an ideal architectural solution —
+ if not an outright poor one. This is the result of a particular set
+ of circumstances, including the developer’s background and the way the file
+ itself evolved. EditorController was assembled over many iterations.
+ It contains some good decisions and some downright disastrous ones
+ that nevertheless happen to work. Much of this code was written
+ with the assistance of LLMs. I have personally reviewed all of it
+ and adapted much of it myself, as a human being. Still, the influence
+ of a probabilistic machine and the haphazard nature of some
+ of the decisions are hard to miss. For this reason, I strongly recommend
+ approaching this code with caution and trying to extract only the elegant
+ solutions, wherever possible.
+ 
+ */
+
 import SwiftUI
 import AppKit
 
@@ -30,7 +50,7 @@ final class EditorController: NSObject, NSTextViewDelegate {
     let document: MarkDocument
     let store: ParsedDocumentStore
 
-    weak var textView: NSTextView?
+    weak var textView: MarkTextView?
     
     private var textChange: TextChange?
     
@@ -151,7 +171,7 @@ final class EditorController: NSObject, NSTextViewDelegate {
     /// This method sets up the internal state, assigns the text view's content from the document,
     /// parses the text, and triggers an initial layout and reformatting pass.
     func configure(
-        _ textView: NSTextView,
+        _ textView: MarkTextView,
         fontName: String,
         fontSize: Double,
         lineSpacing: LineSpacing,
@@ -175,13 +195,11 @@ final class EditorController: NSObject, NSTextViewDelegate {
         self.automaticSymbolBalancing = automaticSymbolBalancing
         self.wrapSelection = wrapSelection
 
-        if let markTextView = textView as? MarkTextView {
-            markTextView.textWidth = textWidth
-            markTextView.editorController = self
+        textView.textWidth = textWidth
+        textView.editorController = self
 
-            markTextView.onResize = { [weak self] in
-                self?.updateTextWidth()
-            }
+        textView.onResize = { [weak self] in
+            self?.updateTextWidth()
         }
 
         textView.string = document.text
@@ -343,6 +361,88 @@ final class EditorController: NSObject, NSTextViewDelegate {
         registerHighlightUndo(old: oldHighlights)
         applyHighlightFormatting(to: textStorage, range: selectedRange)
     }
+    
+    /// Adds a comment to the current text selection.
+    ///
+    /// This method checks if there is an existing highlight at the current selection.
+    /// If a highlight exists, its range is returned. Otherwise, if the selection length
+    /// is greater than zero, the selection is highlighted and the new highlight's range is returned.
+    func addComment() -> NSRange? {
+        guard let textView else { return nil }
+
+        let selection = textView.selectedRange()
+
+        // Reuse an existing highlight.
+        if let highlight = highlight(at: selection) {
+            return highlight.range.nsRange
+        }
+
+        guard selection.length > 0 else { return nil }
+
+        highlightSelection()
+
+        return highlight(at: selection)?.range.nsRange
+    }
+    
+    /// Finds a highlight that overlaps with the given selection.
+    ///
+    /// - Parameter selection: The range of text to check for a highlight.
+    /// - Returns: The first highlight that contains the selection, or `nil` if no highlight is found.
+    func highlight(at selection: NSRange) -> Highlight? {
+        document.meta.highlights.first {
+            let range = $0.range.nsRange
+
+            if selection.length == 0 {
+                return NSLocationInRange(selection.location, range)
+            }
+
+            return selection.location >= range.location &&
+                NSMaxRange(selection) <= NSMaxRange(range)
+        }
+    }
+    
+    /// Updates the comment for a highlight at the specified range.
+    func updateHighlightComment(at range: NSRange, comment: String) {
+        guard let index = document.meta.highlights.firstIndex(where: {
+            $0.range.nsRange == range
+        }) else { return }
+        document.meta.highlights[index].comment = comment.isEmpty ? nil : comment
+    }
+    
+    /// Retrieves the comment for a highlight at the specified range.
+    func highlightComment(at range: NSRange) -> String {
+        document.meta.highlights.first { $0.range.nsRange == range }?.comment ?? ""
+    }
+    
+    /// Returns the highlight containing the entire selection.
+    func highlightRange(containing selection: NSRange) -> NSRange? {
+        document.meta.highlights.first { highlight in
+            let range = highlight.range
+
+            if selection.length == 0 {
+                return selection.location >= range.location &&
+                    selection.location < range.upperBound
+            }
+
+            return selection.location >= range.location &&
+                NSMaxRange(selection) <= range.upperBound
+        }?.range.nsRange
+    }
+
+    /// Removes a highlight and registers an undo action.
+    func removeHighlight(at range: NSRange) {
+        guard let textView,
+              let textStorage = textView.textStorage,
+              let index = document.meta.highlights.firstIndex(where: {
+                  $0.range.nsRange == range
+              }) else { return }
+
+        let oldHighlights = document.meta.highlights
+        document.meta.highlights.remove(at: index)
+
+        removeHighlightFormatting(from: textStorage, range: range)
+        registerHighlightUndo(old: oldHighlights)
+    }
 }
 
 // MARK: - Private
@@ -478,7 +578,7 @@ private extension EditorController {
     ///
     /// This method iterates through all highlights associated with the document and adds a
     /// `.backgroundColor` attribute to the text storage for each valid range.
-    private func applyHighlightFormatting(to textStorage: NSTextStorage, range: NSRange) {
+    func applyHighlightFormatting(to textStorage: NSTextStorage, range: NSRange) {
         removeHighlightFormatting(from: textStorage, range: range)
         
         for highlight in document.meta.highlights {
@@ -510,7 +610,7 @@ private extension EditorController {
     /// This method iterates through the existing highlights and adjusts their ranges based on the
     /// old and new ranges of the text change. Highlights that are completely removed or fall
     /// within a deleted range are removed.
-    private func updateHighlights(for change: TextChange) {
+    func updateHighlights(for change: TextChange) {
         let oldRange = change.oldRange
         let newRange = change.newRange
         let delta = newRange.length - oldRange.length

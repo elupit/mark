@@ -70,6 +70,12 @@ import SwiftUI
                 .labelStyle(.titleAndIcon)
                 .disabled(documentUIState == nil)
                 .keyboardShortcut("h", modifiers: [.shift, .command])
+                
+                Button { documentUIState?.comment?() }
+                label: { Label("Comment", systemImage: "text.bubble") }
+                .labelStyle(.titleAndIcon)
+                .disabled(documentUIState == nil)
+                .keyboardShortcut("k", modifiers: [.shift, .command])
             }
 
             

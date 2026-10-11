@@ -28,7 +28,10 @@ final class DocumentUIState {
 
     var toggleLock: (() -> Void)?
     var export: (() -> Void)?
+    
+    // Format
     var highlight: (() -> Void)?
+    var comment: (() -> Void)?
 }
 
 // MARK: - Focused value

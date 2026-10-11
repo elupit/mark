@@ -7,8 +7,7 @@
 
 - Import `.docx` files
 - Automaticallty insert the matching closing brackets or wrap selected text in typed brackets
-- Highlight text
-
+- Highlight text and add comments. Double-click a highlighted passage to open its comment
 ## Mark 0.2.0
 
 - Import and export plain text files

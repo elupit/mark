@@ -1,6 +1,6 @@
 #  Mark
 
-Mark is a minimal, private, and fully open-source tool for working with interview materials.
+Mark is a minimal, private, and fully open-source tool for working with interview transcripts.
 
 ## About Mark
 
@@ -14,8 +14,8 @@ Created with love and hope for a better future.
 
 ## Document Format
 
-A Mark file is a plain text file with a `.mark` extension. The format is designed to be easily readable on its own, while still allowing the app to store extra information alongside your text. This means you can easily move your work between devices without losing anything.
+Mark uses a plain-text format for interview transcripts with the `.mark` extension. This means your transcripts are stored locally, allowing you to open them in virtually any text-editing app. Because it is just plain text, the format is both portable and future-proof. Mark simply displays it in a clean, readable transcript layout.
 
-Like Markdown or Fountain, `.mark` files use simple text conventions. Because it’s plain text, you can open a `.mark` file in any text editor you like. If you open it in an editor that doesn't support Mark, you’ll simply see your text as usual, with a small block of data at the very bottom.
+Like Markdown or Fountain, `.mark` files use simple text conventions. If you open one in an editor that doesn't support Mark, you will simply see your text as usual, with a small block of technical data at the very bottom. This data stores additional information about the interview that you have added alongside the text itself.
 
 If you'd like to dive deeper into the technical details, check out the full [Document Format](Mark/Documentation/Document%20Format.md) guide.
